@@ -1,0 +1,13 @@
+*.sln
+*.vcxproj*
+*.vcxproj.filters
+*.user
+CMakeSetting.json
+
+libpqxx-7.10.1/
+openssl-3.4.2/
+build/
+out/
+test_files/
+Debug/
+.vs/
