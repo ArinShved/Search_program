@@ -3,6 +3,7 @@
 #include <thread>
 #include <functional>
 #include <mutex>
+#include <atomic>
 
 
 
@@ -16,9 +17,10 @@ public:
 	void submit(std::function<void()> func);
 	void work();
 	~ThreadPool();
+	void wait();
 private:
 	std::vector<std::thread> threads;
 	SafeQueue<std::function<void()>> tasks;
-	bool done;
+	std::atomic<bool> done;
 };
 

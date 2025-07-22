@@ -1,5 +1,6 @@
 #include "indexer.h"
 
+
 Indexer::Indexer() 
 {
    
@@ -89,7 +90,7 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
 }
 
 
-std::string Indexer::clean_page(const std::string& html_page)
+std::string Indexer::clean_page(const std::string& html_page)// перепроверить
 {
     std::string text;
     bool tag = false;
@@ -97,6 +98,12 @@ std::string Indexer::clean_page(const std::string& html_page)
 
     for (char c : html_page) 
     {
+        if (c <= -1 || c >= 255)
+        {
+            continue;
+
+        }
+
         if (c == '<') 
         {
             tag = true;
@@ -116,7 +123,7 @@ std::string Indexer::clean_page(const std::string& html_page)
 
         if (!tag) 
         {
-            if (std::isspace(c) || std::ispunct(static_cast<unsigned char>(c))) 
+            if (std::isspace(c) || (std::ispunct(static_cast<unsigned char>(c))))
             {
                 if (!space) 
                 {

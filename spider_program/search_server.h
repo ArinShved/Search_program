@@ -20,7 +20,7 @@ public:
 private:
     void handle_request(beast::tcp_stream& stream);
     void handle_get(http::request<http::string_body>& req, beast::tcp_stream& stream);
-    void handle_search(http::request<http::string_body>& req, beast::tcp_stream& stream);
+    void handle_post(http::request<http::string_body>& req, beast::tcp_stream& stream);
 
     SearchProgram& program;
     unsigned short port;

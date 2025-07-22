@@ -2,6 +2,7 @@
 #include <queue>
 #include <mutex>
 #include <thread>
+#include <atomic>
 
 template<typename T>
 class SafeQueue {
@@ -16,14 +17,14 @@ public:
 		if (done && task_queue.empty()) {
 			throw std::runtime_error("empty and done");
 		}
-		T data = task_queue.front();
+		T data = std::move(task_queue.front());
 		task_queue.pop();
 		return data;
 	};
 
 	void queue_push(T task) {
 		std::unique_lock<std::mutex> lock(mtx);
-		task_queue.push(task);
+		task_queue.push(std::move(task));
 		notification.notify_one();
 	};
 
@@ -42,6 +43,6 @@ private:
 	std::queue<T> task_queue;
 	std::mutex mtx;
 	std::condition_variable notification;
-	bool done;
+	std::atomic<bool> done;
 };
 

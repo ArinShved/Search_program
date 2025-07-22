@@ -23,7 +23,11 @@ void ThreadPool::work()
         }
         catch (const std::runtime_error& e) 
         {
-            break;
+            if (done)
+            {
+                break;
+            }
+            continue;
         }
     }
 };
@@ -45,6 +49,30 @@ ThreadPool::~ThreadPool()
     
 void ThreadPool::submit(std::function<void()> func) 
 {
+    if (done|| !func)
+    {
+        return;
+    }
     tasks.queue_push(func);
 };
+
+void ThreadPool::wait() 
+{
+    while (!tasks.queue_empty() && !done)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
+
+    done = true;
+    tasks.set_done();
+
+
+    for (auto& thread : threads)
+    {
+        if (thread.joinable())
+        {
+            thread.join();
+        }
+    }
+}
   

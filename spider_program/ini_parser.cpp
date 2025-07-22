@@ -114,7 +114,8 @@ SpiderData INIParser::parse_spider()
     return spider;
 }
 
-int INIParser::parse_port() {
+int INIParser::parse_port() 
+{
     auto text = read_INIfile();
 
     try 

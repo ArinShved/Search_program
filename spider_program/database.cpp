@@ -11,6 +11,7 @@
 
          pqxx::work w(c);
          w.exec("SET client_encoding TO 'UTF-8'");
+         //PQsetClientEncoding(w, "UTF8");
          w.commit();
 
          create_table();

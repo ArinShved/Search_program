@@ -8,7 +8,7 @@ std::vector<SearchResult> SearchProgram::search_result(const std::vector<std::st
     {
         return {};
     }
-
+    //добавить кодировка
     try 
     {
         return db.search(query_words);
