@@ -90,7 +90,7 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
 }
 
 
-std::string Indexer::clean_page(const std::string& html_page)// перепроверить
+std::string Indexer::clean_page(const std::string& html_page)
 {
     std::string text;
     bool tag = false;
@@ -98,7 +98,7 @@ std::string Indexer::clean_page(const std::string& html_page)// перепроверить
 
     for (char c : html_page) 
     {
-        if (c <= -1 || c >= 255)
+        if (c <= -1 || c >= 255)//перепроверить
         {
             continue;
 
@@ -228,11 +228,14 @@ std::string Indexer::clean_for_db(const std::string& input)
     for (int i = 0; i < input.size(); ++i)
     {
         char c = input[i]; 
+        //std::cout << arr[i].size() << "\n";
 
         if (c == '&') 
         {
-           
-            if (i + 4 < input.size() && input.substr(i, 5) == "&amp;")// постарайся оптимизировать
+          // if(i + arr[i].size())
+            
+
+            if (i + 4 < input.size() && input.substr(i, 5) == "&amp;")
             {
                 output += '&';
                 i += 4;

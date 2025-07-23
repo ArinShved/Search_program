@@ -39,6 +39,8 @@ public:
 		notification.notify_all();
 	};
 
+	~SafeQueue() { set_done(); }
+
 private:
 	std::queue<T> task_queue;
 	std::mutex mtx;

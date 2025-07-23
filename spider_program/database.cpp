@@ -255,3 +255,11 @@ void DataBase::clear_database()
         throw std::runtime_error("Failed to clear database: " + std::string(e.what()) + "\n");
     }
 }
+
+DataBase::~DataBase() 
+{
+    if (c.is_open()) 
+    {
+        c.close(); 
+    }
+}

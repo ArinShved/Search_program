@@ -6,13 +6,13 @@ namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
 Spider::Spider(
-    const std::string& _start_url,
+    const std::string& _start_url,// mb просто передевать ини-парсер и бд. сделать второй конструктор. 
     int _max_depth,
     size_t _max_threads,
     size_t _max_pages,
     DataBase& _db,
     bool _domain_filter)
-    : 
+    :
     start_url(_start_url),
     max_depth(_max_depth),
     max_threads(_max_threads),
@@ -20,23 +20,37 @@ Spider::Spider(
     db(_db),
     domain_filter(_domain_filter),
 
-    thread_pool(_max_threads) {
+    thread_pool(_max_threads)
+{
 }
+
+/*Spider::Spider(DataBase& _db,
+    INIParser& _ini_pars, bool _domain_filter)
+    :
+    db(_db), ini_pars(_ini_pars), domain_filter(_domain_filter)
+{
+    start_url = ini_pars.get_spider_data().start_url;
+    max_depth = ini_pars.get_spider_data().max_depth;
+    max_threads = ini_pars.get_spider_data().max_threads;
+    max_pages = 1000;
+    thread_pool(max_threads);
+
+
+}*/
 
 
 void Spider::run()
 {
     std::cout << "Start processing: " << "\n";
     add_task(start_url, 0);
-    std::cout << "Add task: " << "\n";
-    int i = 0;
+    
     
 
     while (processed_pages < max_pages && !safe_queue.queue_empty())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
         
-        std::cout << i++ << "\n";
+    
     }
 
     thread_pool.wait();
@@ -54,10 +68,11 @@ void Spider::add_task(const std::string& url, int depth)
         return;
     }
 
-    if (visited_urls.count(url) == 0 && depth <= max_depth) 
+    if (visited_urls.count(url) == 0 || depth <= max_depth) 
     {
         safe_queue.queue_push(std::make_pair(url, depth));
         visited_urls.insert(url);
+        std::cout << "Adding task: " << url << " (depth: " << depth << ")\n";
         lock.unlock();
         thread_pool.submit([this] {process_next_data();});
 
@@ -65,7 +80,7 @@ void Spider::add_task(const std::string& url, int depth)
 }
 
 
-void Spider::process_next_data()//исправить глубину
+void Spider::process_next_data()
 {
 
    // auto task = safe_queue.queue_pop();
@@ -97,6 +112,7 @@ void Spider::process_next_data()//исправить глубину
 
         std::string title = indexer.get_title(html);
         title = indexer.clean_for_db(title);
+        std::cout << title << "\n";
 
         try 
         {
@@ -110,7 +126,7 @@ void Spider::process_next_data()//исправить глубину
 
         auto links = extract_links(html, task.first);
         for (const auto& link : links) {
-           // std::cout << link << "\n";
+            std::cout << link << "\n";
             add_task(link, task.second + 1);
         }
 
@@ -247,7 +263,7 @@ std::string Spider::download_page(const std::string& url)
 }
 
 
-std::vector<std::string> Spider::extract_links(const std::string& html, const std::string& base_url)// добавить больше очистки
+std::vector<std::string> Spider::extract_links(const std::string& html, const std::string& base_url)
 {
     std::vector<std::string> links;
     std::regex link_re(R"(<a\s+href=["']\s*([^"']*?)\s*["'])", std::regex_constants::icase);
@@ -264,8 +280,7 @@ std::vector<std::string> Spider::extract_links(const std::string& html, const st
         link.erase(link.find_last_not_of(" \t\n\r\f\v") + 1);
         link.erase(0, link.find_first_not_of(" \t\n\r\f\v"));
 
-        if (link.empty() || link[0] == '#'|| link.find("javascript:") == 0 ||
-            link.find("mailto:") == 0 ||link.find("tel:") == 0)
+        if (link.empty() || link[0] == '#'|| skip_link(link))
         {
             continue;
         }
@@ -312,8 +327,23 @@ std::vector<std::string> Spider::extract_links(const std::string& html, const st
 
 bool Spider::skip_link(const std::string& link)
 {
-    //TODO
-    return 1;
+    std::vector<std::string> ignor = {
+    "file:", ".js", "javascript:",".json",".jpg", ".jpeg", ".png",".pdf", ".doc", ".docx", ".gif", ".svg", ".webp",
+    ".mp3", ".wav", ".7z", ".tar",".css",  ".xml", ".ico", ".xls", ".xlsx", ".ppt",
+    ".mp4", ".avi", ".mov", ".mkv", ".webm", ".zip", ".rar",".ogg",".flac",  ".gz",
+    ".exe", ".dll", ".msi", ".deb", ".rpm", "javascript:", "tel:", "mailto:", "ftp:", 
+    "facebook.com", "x.com", "instagram.com","youtube.com","tiktok.com"
+    };
+
+    for (int bad_words = 0; bad_words < ignor.size(); bad_words++)
+    {
+        if (link.find(ignor[bad_words]) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
 }
 
  std::unordered_set<std::string>& Spider::get_visited_urls()  

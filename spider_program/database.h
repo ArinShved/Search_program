@@ -30,6 +30,8 @@ public:
 
 
 	pqxx::connection& get_connection();
+
+	~DataBase();
 private:
 	std::unique_ptr<pqxx::connection> l;
 	pqxx::connection c;

@@ -19,7 +19,7 @@ std::map<std::string, std::map<std::string, std::string>> INIParser::read_INIfil
 
     std::map<std::string, std::map<std::string, std::string>> res;
 
-    std::string current_section;
+    std::string cur_section;
 
     std::string line;
 
@@ -47,7 +47,7 @@ std::map<std::string, std::map<std::string, std::string>> INIParser::read_INIfil
 
         if (line.front() == '[' && line.back() == ']')
         {
-            current_section = line.substr(1, line.size() - 2);
+            cur_section = line.substr(1, line.size() - 2);
             continue;
         }
 
@@ -66,7 +66,7 @@ std::map<std::string, std::map<std::string, std::string>> INIParser::read_INIfil
         t(key);
         t(value);
 
-        res[current_section][key] = value;
+        res[cur_section][key] = value;
     }
 
     return res;

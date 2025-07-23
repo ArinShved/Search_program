@@ -32,6 +32,8 @@ public:
         DataBase& db,
         bool domain_filter);
 
+   // Spider(DataBase& db, INIParser& ini_pars, bool _domain_filter);
+
     ~Spider();
 
 	void run();
@@ -59,6 +61,7 @@ private:
     ThreadPool thread_pool;
     std::unordered_set<std::string> visited_urls;
 
+   // INIParser& ini_pars;
 
     std::string start_url;
     int max_depth;

@@ -25,8 +25,11 @@ void run_spider(INIParser& ini, DataBase& db)
     try 
     {
         Spider spider(
-            ini.get_spider_data().start_url,
-            3,
+            "https://en.cppreference.com",
+           // "https://learn.microsoft.com/ru-ru/cpp/overview/visual-cpp-in-visual-studio?view=msvc-170",
+           // "https://en.cppreference.com",
+           // ini.get_spider_data().start_url,
+            6,
             ini.get_spider_data().max_threads,
             1000,
             db,
@@ -66,10 +69,10 @@ int main() {
         
         run_spider(ini_parser, db);
 
-        SearchProgram searcher(db);
+       // SearchProgram searcher(db);
 
         
-        std::vector<std::string> query = { "evil" };
+        /*std::vector<std::string> query = {"evil","енот"};
         int result_limit = 5;
 
         auto results = searcher.search_result(query, result_limit);
@@ -79,11 +82,11 @@ int main() {
             std::cout << " - " << res.url << " (relevance: " << res.relevance << ")" << std::endl;
         }
 
-        run_search_server(ini_parser, db);
+      //  run_search_server(ini_parser, db);
         std::string url = "http://localhost:" + std::to_string(ini_parser.get_port());
 
         std::cout << "Открываю браузер: " << url << std::endl;
-        open_browser(url);
+      //  open_browser(url);*/
 
 
         //завершилась с кодом 3221225786!
