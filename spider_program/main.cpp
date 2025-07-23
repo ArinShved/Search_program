@@ -25,11 +25,13 @@ void run_spider(INIParser& ini, DataBase& db)
     try 
     {
         Spider spider(
-            "https://en.cppreference.com",
+            "https://www.postgresql.org/",
+           // "https://www.postgresql.org/docs/current/sql-insert.html",
+           // "https://en.cppreference.com",
            // "https://learn.microsoft.com/ru-ru/cpp/overview/visual-cpp-in-visual-studio?view=msvc-170",
            // "https://en.cppreference.com",
            // ini.get_spider_data().start_url,
-            6,
+            1,
             ini.get_spider_data().max_threads,
             1000,
             db,
@@ -66,8 +68,8 @@ int main() {
         INIParser ini_parser("spider.ini");
         DataBase db(ini_parser.db_conn_str());
 
-        
-        run_spider(ini_parser, db);
+       
+       run_spider(ini_parser, db);
 
        // SearchProgram searcher(db);
 

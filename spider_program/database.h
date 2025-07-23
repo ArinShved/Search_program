@@ -10,7 +10,7 @@
 struct SearchResult {
 	std::string url;
 	std::string title;
-	int relevance;
+	int relevance = 0;
 };
 
 class DataBase 

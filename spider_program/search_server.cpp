@@ -22,7 +22,7 @@ void SearchServer::run()
 
             try 
             {
-                handle_request(stream);
+                request(stream);
             }
             catch (const std::exception& e) 
             {
@@ -44,7 +44,7 @@ void SearchServer::run()
     }
 }
 
-void SearchServer::handle_request(beast::tcp_stream& stream) 
+void SearchServer::request(beast::tcp_stream& stream) 
 {
     beast::flat_buffer buffer;
     http::request<http::string_body> req;
@@ -52,7 +52,7 @@ void SearchServer::handle_request(beast::tcp_stream& stream)
 
     if (req.method() == http::verb::get) 
     {
-        handle_get(req, stream);
+        get(req, stream);
     }
     else 
     {
@@ -64,11 +64,11 @@ void SearchServer::handle_request(beast::tcp_stream& stream)
     }
 }
 
-void SearchServer::handle_get(http::request<http::string_body>& req, beast::tcp_stream& stream)
+void SearchServer::get(http::request<http::string_body>& req, beast::tcp_stream& stream)
 {
     if (req.target().starts_with("/search")) 
     {
-        handle_post(req, stream);
+        post(req, stream);
     }
     else {
         http::response<http::string_body> res{ http::status::ok, req.version() };
@@ -148,7 +148,7 @@ void SearchServer::handle_get(http::request<http::string_body>& req, beast::tcp_
 
 
 
-void SearchServer::handle_post(http::request<http::string_body>& req, beast::tcp_stream& stream)
+void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream& stream)
 {
     std::vector<std::string> query_words;
 

@@ -18,9 +18,9 @@ public:
     void run();
 
 private:
-    void handle_request(beast::tcp_stream& stream);
-    void handle_get(http::request<http::string_body>& req, beast::tcp_stream& stream);
-    void handle_post(http::request<http::string_body>& req, beast::tcp_stream& stream);
+    void request(beast::tcp_stream& stream);
+    void get(http::request<http::string_body>& req, beast::tcp_stream& stream);
+    void post(http::request<http::string_body>& req, beast::tcp_stream& stream);
 
     SearchProgram& program;
     unsigned short port;

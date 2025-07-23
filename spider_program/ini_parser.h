@@ -9,7 +9,7 @@
 struct DatabaseData
 {
     std::string host;
-    int port;
+    int port = 0;
     std::string dbname;
     std::string user;
     std::string password;
@@ -18,8 +18,8 @@ struct DatabaseData
 struct SpiderData 
 {
     std::string start_url;
-    int max_depth;
-    size_t max_threads;
+    int max_depth = 0;
+    size_t max_threads = 0;
 };
 
 class INIParser

@@ -73,9 +73,10 @@ void DataBase::create_table()
 
 void DataBase::insert_document(const std::string& url, const std::string& title)
 {
-    try 
-    { 
-        pqxx::work w(c);
+     
+     pqxx::work w(c);
+     try
+     {
         w.exec_params("INSERT INTO documents (url, title) VALUES ($1, $2) "
                       "ON CONFLICT (url) DO UPDATE SET title = EXCLUDED.title",
                       url, title);
@@ -84,30 +85,34 @@ void DataBase::insert_document(const std::string& url, const std::string& title)
     }
     catch (const std::exception& e)
     {
-         throw std::runtime_error("Failed to insert document: " + std::string(e.what()) + "\n");
+        w.abort();
+        throw std::runtime_error("Failed to insert document: " + std::string(e.what()) + "\n");
     }
 }
 
 void DataBase::insert_word(const std::string& word)
 {
+    pqxx::work w(c);
     try
     {
-        pqxx::work w(c);
+        
         pqxx::result r = w.exec_params("INSERT INTO words (word) VALUES ($1) RETURNING id", word);
 
         w.commit();
     }
     catch (const std::exception& e) 
     {
+        w.abort();
         throw std::runtime_error("Failed to insert word: " + std::string(e.what()) + "/n");
     }
 }
 
 void DataBase::insert_document_word(int doc_id, int word_id, int frequency)
 {
+    pqxx::work w(c);
     try 
     {
-        pqxx::work w(c);
+        
         w.exec_params("INSERT INTO document_word (document_id, word_id, frequency) "
                       "VALUES ($1, $2, $3) "
                       "ON CONFLICT (document_id, word_id) DO UPDATE SET frequency = $3",
@@ -117,6 +122,7 @@ void DataBase::insert_document_word(int doc_id, int word_id, int frequency)
     }
     catch (const std::exception& e)
     {
+        w.abort();
         throw std::runtime_error("Failed to insert document-word relation: " + std::string(e.what()) + "/n");
     }
 }
@@ -133,7 +139,8 @@ int DataBase::get_documentID(const std::string& url)
         if (r.empty() || r[0][0].is_null()) 
         {
             throw std::runtime_error("Document not found: " + url);
-            return -1; 
+            w.abort();
+          //  return -1; 
         }
 
         
@@ -156,7 +163,8 @@ int DataBase::get_wordID(const std::string& word)
         {
         
             throw std::runtime_error("Word not found: " + word);
-            return -1;
+            w.abort();
+           // return -1;
         }
 
         return r[0][0].as<int>();
@@ -249,6 +257,7 @@ void DataBase::clear_database()
 
         w.commit();
         
+        std::cout << "Database cleared\n";
     }
     catch (const std::exception& e)
     {

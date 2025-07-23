@@ -22,6 +22,8 @@ Spider::Spider(
 
     thread_pool(_max_threads)
 {
+
+    std::cout <<"Max death: " <<  max_depth << "\n";
 }
 
 /*Spider::Spider(DataBase& _db,
@@ -48,7 +50,7 @@ void Spider::run()
 
     while (processed_pages < max_pages && !safe_queue.queue_empty())
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
         
     
     }
@@ -68,7 +70,7 @@ void Spider::add_task(const std::string& url, int depth)
         return;
     }
 
-    if (visited_urls.count(url) == 0 || depth <= max_depth) 
+    if (visited_urls.count(url) == 0 && depth <= max_depth) 
     {
         safe_queue.queue_push(std::make_pair(url, depth));
         visited_urls.insert(url);
@@ -125,8 +127,9 @@ void Spider::process_next_data()
         }
 
         auto links = extract_links(html, task.first);
-        for (const auto& link : links) {
-            std::cout << link << "\n";
+        for (const auto& link : links) 
+        {
+           // std::cout << link << "\n";
             add_task(link, task.second + 1);
         }
 

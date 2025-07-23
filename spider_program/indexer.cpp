@@ -85,6 +85,7 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
     catch (const std::exception& e)
     {
         std::cerr << "Database save error: " << e.what() << std::endl;
+        w.abort();
         throw;  
     }
 }
