@@ -11,7 +11,7 @@ class SearchProgram {
 public:
     explicit SearchProgram(DataBase& db);
 
-    std::vector<SearchResult> search_result(const std::vector<std::string>& query_words, int limit = 10);
+    std::vector<SearchResult> search_result(const std::vector<std::string>& query_words, int limit);
     void index_document(const std::string& url, const std::string& content);
 
 private:

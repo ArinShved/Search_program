@@ -74,9 +74,12 @@ int main() {
         INIParser ini_parser("spider.ini");
         DataBase db(ini_parser.db_conn_str());
 
-        run_search_server(ini_parser, db);
+        std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
+        std::thread search_pr(run_search_server, std::ref(ini_parser), std::ref(db));
+        
 
-        run_spider(ini_parser, db);
+       // run_spider(ini_parser, db);
+        //run_search_server(ini_parser, db);
 
        
 
@@ -84,7 +87,10 @@ int main() {
         std::string url = "http://localhost:" + std::to_string(ini_parser.get_port());
         open_browser(url);
 
+        std::cout << "If Browser doesn't open, please open the link: " + url + "\n";
     
+        spider_pr.join();
+        search_pr.join();
 
 
         //завершилась с кодом 3221225786!

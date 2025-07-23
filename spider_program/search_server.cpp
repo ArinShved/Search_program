@@ -178,7 +178,7 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
     }
 
  
-    auto results = program.search_result(query_words);
+    auto results = program.search_result(query_words, 10);
 
 
    std::ostringstream html;

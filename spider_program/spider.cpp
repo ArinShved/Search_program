@@ -22,8 +22,6 @@ Spider::Spider(
 
     thread_pool(_max_threads)
 {
-
-    std::cout <<"Max death: " <<  max_depth << "\n";
 }
 
 /*Spider::Spider(DataBase& _db,
@@ -43,7 +41,7 @@ Spider::Spider(
 
 void Spider::run()
 {
-    std::cout << "Start processing: " << "\n";
+  // std::cout << "Start processing: " << "\n";
     add_task(start_url, 0);
     
     
@@ -57,7 +55,7 @@ void Spider::run()
 
     thread_pool.wait();
 
-    std::cout << "Processed pages: " << processed_pages << "\n";
+  //  std::cout << "Processed pages: " << processed_pages << "\n";
 }
 
 
@@ -65,16 +63,11 @@ void Spider::add_task(const std::string& url, int depth)
 {
     std::unique_lock<std::mutex> lock(queue_mutex);
 
-    if (url.find("http://") != 0 && url.find("https://") != 0)
-    {
-        return;
-    }
-
     if (visited_urls.count(url) == 0 && depth <= max_depth) 
     {
         safe_queue.queue_push(std::make_pair(url, depth));
         visited_urls.insert(url);
-        std::cout << "Adding task: " << url << " (depth: " << depth << ")\n";
+       // std::cout << "Adding task: " << url << " (depth: " << depth << ")\n";
         lock.unlock();
         thread_pool.submit([this] {process_next_data();});
 
@@ -137,7 +130,7 @@ void Spider::process_next_data()
         }
 
         processed_pages++;
-        std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
+      //  std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
     }
     catch (const std::exception& e) 
     {
@@ -209,7 +202,7 @@ std::string Spider::download_page(const std::string& url)
                 11  
             };
             request.set(http::field::host, host);
-            request.set(http::field::user_agent, "SpiderBot/1.0");
+            request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
             http::write(stream, request);
 
@@ -243,7 +236,7 @@ std::string Spider::download_page(const std::string& url)
                 11
             };
             request.set(http::field::host, host);
-            request.set(http::field::user_agent, "SpiderBot/1.0");
+            request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
             http::write(stream, request);
 
@@ -360,6 +353,6 @@ bool Spider::skip_link(const std::string& link)
 
  Spider::~Spider()
  {
-     std::cout << "Spider destruct" << "\n";
+    // std::cout << "Spider destruct" << "\n";
      thread_pool.wait();
  }

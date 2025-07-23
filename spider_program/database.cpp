@@ -251,9 +251,6 @@ void DataBase::clear_database()
         w.exec("DELETE FROM documents");
         w.exec("DELETE FROM words");
 
-        
-        w.exec("ALTER SEQUENCE documents_id_seq RESTART WITH 1");
-        w.exec("ALTER SEQUENCE words_id_seq RESTART WITH 1");
 
         w.commit();
         
