@@ -15,6 +15,7 @@ namespace net = boost::asio;
 class SearchServer {
 public:
     SearchServer(SearchProgram& engine, unsigned short port);
+    ~SearchServer();
     void run();
 
 private:
@@ -23,5 +24,7 @@ private:
     void post(http::request<http::string_body>& req, beast::tcp_stream& stream);
 
     SearchProgram& program;
+
     unsigned short port;
+    net::io_context ioc{ 1 };
 };

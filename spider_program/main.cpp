@@ -1,4 +1,6 @@
 #include <iostream>
+//#include <Windows.h>
+
 
 #include "database.h"
 #include "ini_parser.h"
@@ -6,6 +8,8 @@
 #include "spider.h"
 #include "search_program.h"
 #include "search_server.h"
+
+//#pragma comment(lib,"shell32")
 
 void open_browser(const std::string& url) {
 #ifdef _WIN32
@@ -17,6 +21,8 @@ void open_browser(const std::string& url) {
 #endif
 
     std::system(command.c_str());
+
+  //  ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 
@@ -25,13 +31,13 @@ void run_spider(INIParser& ini, DataBase& db)
     try 
     {
         Spider spider(
-            "https://www.postgresql.org/",
+            //"https://metanit.com/common/",
            // "https://www.postgresql.org/docs/current/sql-insert.html",
            // "https://en.cppreference.com",
            // "https://learn.microsoft.com/ru-ru/cpp/overview/visual-cpp-in-visual-studio?view=msvc-170",
            // "https://en.cppreference.com",
-           // ini.get_spider_data().start_url,
-            1,
+            ini.get_spider_data().start_url,
+            ini.get_spider_data().max_depth,
             ini.get_spider_data().max_threads,
             1000,
             db,
@@ -68,27 +74,17 @@ int main() {
         INIParser ini_parser("spider.ini");
         DataBase db(ini_parser.db_conn_str());
 
+        run_search_server(ini_parser, db);
+
+        run_spider(ini_parser, db);
+
        
-       run_spider(ini_parser, db);
 
-       // SearchProgram searcher(db);
-
-        
-        /*std::vector<std::string> query = {"evil","енот"};
-        int result_limit = 5;
-
-        auto results = searcher.search_result(query, result_limit);
-
-        std::cout << "Search results:" << std::endl;
-        for (const auto& res : results) {
-            std::cout << " - " << res.url << " (relevance: " << res.relevance << ")" << std::endl;
-        }
-
-      //  run_search_server(ini_parser, db);
+        std::this_thread::sleep_for(std::chrono::seconds(2));
         std::string url = "http://localhost:" + std::to_string(ini_parser.get_port());
+        open_browser(url);
 
-        std::cout << "Открываю браузер: " << url << std::endl;
-      //  open_browser(url);*/
+    
 
 
         //завершилась с кодом 3221225786!

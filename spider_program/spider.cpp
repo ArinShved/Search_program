@@ -96,6 +96,9 @@ void Spider::process_next_data()
         return;
     }
 
+    //Started new transaction while transaction was still active.
+    std::lock_guard<std::mutex> lock(db_mutex);//нет ошибки, но значительно сократилась скорость
+
     try 
     {
         std::string html = download_page(task.first);
@@ -114,7 +117,7 @@ void Spider::process_next_data()
 
         std::string title = indexer.get_title(html);
         title = indexer.clean_for_db(title);
-        std::cout << title << "\n";
+       // std::cout << title << "\n";
 
         try 
         {
@@ -123,7 +126,7 @@ void Spider::process_next_data()
         catch (const std::exception& db_e) 
         {
             std::cerr << "Database error processing " << task.first << ": " << db_e.what() << "\n";
-            return;
+            return; 
         }
 
         auto links = extract_links(html, task.first);
@@ -335,7 +338,7 @@ bool Spider::skip_link(const std::string& link)
     ".mp3", ".wav", ".7z", ".tar",".css",  ".xml", ".ico", ".xls", ".xlsx", ".ppt",
     ".mp4", ".avi", ".mov", ".mkv", ".webm", ".zip", ".rar",".ogg",".flac",  ".gz",
     ".exe", ".dll", ".msi", ".deb", ".rpm", "javascript:", "tel:", "mailto:", "ftp:", 
-    "facebook.com", "x.com", "instagram.com","youtube.com","tiktok.com"
+    "facebook.com", "x.com", "instagram.com","youtube.com","tiktok.com", "twitter.com"
     };
 
     for (int bad_words = 0; bad_words < ignor.size(); bad_words++)

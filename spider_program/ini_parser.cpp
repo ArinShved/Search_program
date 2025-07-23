@@ -124,7 +124,7 @@ int INIParser::parse_port()
     }
     catch (const std::exception& e) 
     {
-        throw std::runtime_error("Invalid server port: " + std::string(e.what()) + "/n");
+        throw std::runtime_error("Invalid server port: " + std::string(e.what()) + "\n");
     }
 }
 

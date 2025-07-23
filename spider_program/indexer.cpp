@@ -40,15 +40,15 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
                 throw std::runtime_error("Document not found: " + clean_url);
             }
 
-            int doc_id;
-            try 
+            int doc_id = r[0][0].as<int>();;
+           /* try
             {
                 doc_id = r[0][0].as<int>(); 
             }
             catch (const pqxx::conversion_error& e) 
             {
                 throw std::runtime_error("Invalid document ID format: " + std::string(e.what()));
-            }
+            }*/
 
             
             w.exec_params("DELETE FROM document_word WHERE document_id = $1", doc_id);
@@ -71,7 +71,7 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
                     }
                     catch (const std::exception& e) 
                     {
-                        std::cerr << "Error processing word '" << word << "': " << e.what() << std::endl;
+                        std::cerr << "Error processing word '" << word << "': " << e.what() << "\n";
                         continue; 
                     }
                 }
@@ -84,8 +84,9 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
         }
     catch (const std::exception& e)
     {
-        std::cerr << "Database save error: " << e.what() << std::endl;
         w.abort();
+        std::cerr << "Database save error: " << e.what() << "\n";
+        
         throw;  
     }
 }
@@ -215,7 +216,7 @@ std::string Indexer::get_title(const std::string& html_page)
     
 }
 
-std::string Indexer::clean_for_db(const std::string& input) 
+std::string Indexer::clean_for_db(const std::string& input) // улучшить
 {
     if (input.empty())
     {

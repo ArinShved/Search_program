@@ -10,7 +10,6 @@ void SearchServer::run()
 {
     try 
     {
-        net::io_context ioc{ 1 };
         tcp::acceptor acceptor{ ioc, {tcp::v4(), port} };
 
         std::cout << "Search server running on port " << port << std::endl;
@@ -321,4 +320,9 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
     res.prepare_payload();
     http::write(stream, res);
     
+}
+
+SearchServer::~SearchServer() 
+{
+    ioc.stop();
 }

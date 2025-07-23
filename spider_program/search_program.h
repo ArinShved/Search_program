@@ -18,4 +18,5 @@ private:
     DataBase& db;
 
     std::vector<std::string> extract_words(const std::string& text);
+
 };

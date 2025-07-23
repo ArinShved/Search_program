@@ -79,7 +79,7 @@ private:
     std::mutex visited_mutex;
     std::atomic<int> processed_pages{ 0 };
 
-   
+    std::mutex db_mutex;
    
 
 
