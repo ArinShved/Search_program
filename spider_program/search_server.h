@@ -26,11 +26,10 @@ private:
     void get(http::request<http::string_body>& req, beast::tcp_stream& stream);
     void post(http::request<http::string_body>& req, beast::tcp_stream& stream);
 
-    //SearchProgram& program;
     DataBase& db;
     std::mutex mutex;
-
     unsigned short port;
     net::io_context ioc{ 1 };
     std::string err_mes;
+    bool stop = false;
 };

@@ -36,7 +36,7 @@ void run_spider(INIParser& ini, DataBase& db)
            // "https://learn.microsoft.com/ru-ru/cpp/overview/visual-cpp-in-visual-studio?view=msvc-170",
            // "https://en.cppreference.com",
             ini.get_spider_data().start_url,
-            1,//ini.get_spider_data().max_depth,
+            0,//ini.get_spider_data().max_depth,
             ini.get_spider_data().max_threads,
             1000,
             db,
@@ -70,6 +70,8 @@ int main() {
     SetConsoleOutputCP(CP_UTF8);
     try
     {
+        std::cout << "Please, wait...\n";
+
         INIParser ini_parser("spider.ini");
         DataBase db(ini_parser.db_conn_str());
         DataBase db_search(ini_parser.db_conn_str());

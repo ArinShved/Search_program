@@ -14,7 +14,7 @@ void SearchServer::run()
 
        // std::cout << "Search server running on port " << port << std::endl;
 
-        while (true) 
+        while (!stop) 
         {
             beast::tcp_stream stream(ioc);
             acceptor.accept(stream.socket());
@@ -27,6 +27,7 @@ void SearchServer::run()
             {
                 std::cerr << "Error handling request: " << e.what() << "\n";
 
+                //ошибка 500
                 http::response<http::string_body> res{ http::status::internal_server_error, 11 };
 
                 res.set(http::field::content_type, "text/plain");
@@ -77,7 +78,7 @@ void SearchServer::request(beast::tcp_stream& stream)
         get(req, stream);
     }
     else 
-    {
+    { //ошибка 400
         http::response<http::string_body> res{ http::status::bad_request, req.version() };
         res.set(http::field::content_type, "text/plain");
         res.body() = "Invalid request method";
@@ -374,5 +375,7 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
 
 SearchServer::~SearchServer() 
 {
+    stop = true;
     ioc.stop();
+    std::cout << "Server stopped\n";
 }

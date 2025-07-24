@@ -42,7 +42,6 @@ private:
 
     void process_next_data();
     bool skip_link(const std::string& link);
-
     void add_task(const std::string& url, int depth);
 
     std::string download_page(const std::string& url);
