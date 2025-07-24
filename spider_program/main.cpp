@@ -37,7 +37,7 @@ void run_spider(INIParser& ini, DataBase& db)
            // "https://learn.microsoft.com/ru-ru/cpp/overview/visual-cpp-in-visual-studio?view=msvc-170",
            // "https://en.cppreference.com",
             ini.get_spider_data().start_url,
-            ini.get_spider_data().max_depth,
+            1,//ini.get_spider_data().max_depth,
             ini.get_spider_data().max_threads,
             1000,
             db,
@@ -78,16 +78,11 @@ int main() {
         std::thread search_pr(run_search_server, std::ref(ini_parser), std::ref(db));
         
 
-       // run_spider(ini_parser, db);
-        //run_search_server(ini_parser, db);
-
-       
-
         std::this_thread::sleep_for(std::chrono::seconds(2));
         std::string url = "http://localhost:" + std::to_string(ini_parser.get_port());
         open_browser(url);
 
-        std::cout << "If Browser doesn't open, please open the link: " + url + "\n";
+        std::cout << "\n\nIf Browser doesn't open, please open the link: " + url + "\n\n";
     
         spider_pr.join();
         search_pr.join();

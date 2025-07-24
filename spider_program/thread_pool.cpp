@@ -76,3 +76,7 @@ void ThreadPool::wait()
     }
 }
   
+bool ThreadPool::is_done()
+{
+    return tasks.queue_empty();
+}

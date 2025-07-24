@@ -41,16 +41,7 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
             }
 
             int doc_id = r[0][0].as<int>();;
-           /* try
-            {
-                doc_id = r[0][0].as<int>(); 
-            }
-            catch (const pqxx::conversion_error& e) 
-            {
-                throw std::runtime_error("Invalid document ID format: " + std::string(e.what()));
-            }*/
-
-            
+                     
             w.exec_params("DELETE FROM document_word WHERE document_id = $1", doc_id);
 
             
@@ -224,20 +215,38 @@ std::string Indexer::clean_for_db(const std::string& input) // улучшить
     }
 
     std::string output;
-    std::vector<std::string> arr = { "&lt;", "&gt;", "&amp;", "&quot;", "&apos;", "&nbsp;" };
+    static const std::unordered_map<std::string_view, char> del_s = {
+        {"&amp;", '&'},{"&lt;", '<'},{"&gt;", '>'},{"&quot;", '"'},
+        {"&apos;", '\''},{"&nbsp;", ' '},   
+    };
     output.reserve(input.size());
 
     for (int i = 0; i < input.size(); ++i)
     {
         char c = input[i]; 
-        //std::cout << arr[i].size() << "\n";
+        bool stop = false;
 
-        if (c == '&') 
+        if (c == '&')
         {
-          // if(i + arr[i].size())
+            for (auto& [word, swap] : del_s)
+            {
+                if (i + word.size() <= input.size() && input.compare(i, word.size(), word) == 0)
+                {
+                    output += swap;
+                    i += word.size();
+                    stop = true;
+                    break;
+                }
+            }
+
+            if (stop)
+            {
+                continue;
+            }
+        }
             
 
-            if (i + 4 < input.size() && input.substr(i, 5) == "&amp;")
+        /*    if (i + 4 < input.size() && input.substr(i, 5) == "&amp;")
             {
                 output += '&';
                 i += 4;
@@ -270,8 +279,8 @@ std::string Indexer::clean_for_db(const std::string& input) // улучшить
                 i += 5;
                 continue;
             }
-        }
-
+        }*/
+        
        
 
         if (c >= 32 && c <= 126)

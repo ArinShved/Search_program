@@ -8,11 +8,12 @@ std::vector<SearchResult> SearchProgram::search_result(const std::vector<std::st
     {
         return {};
     }
-
+    std::lock_guard<std::mutex> lock(mutex);//Search error: Database search failed: Started new transaction while transaction was still active./n
     
     //добавить кодировка
     try 
     {
+
         return db.search(query_words);
     }
     catch (const std::exception& e) 

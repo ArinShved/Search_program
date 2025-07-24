@@ -41,21 +41,24 @@ Spider::Spider(
 
 void Spider::run()
 {
-  // std::cout << "Start processing: " << "\n";
+    std::unique_lock<std::mutex> lock(cond_mutex);
     add_task(start_url, 0);
-    
-    
 
-    while (processed_pages < max_pages && !safe_queue.queue_empty())
+    cond_v.wait(lock, [this] {
+        return processed_pages >= max_pages || (safe_queue.queue_empty() && thread_pool.is_done());
+     });
+
+
+   /* while (processed_pages < max_pages && !safe_queue.queue_empty())
     {
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-        
-    
-    }
 
+    }*/
+    
+    
     thread_pool.wait();
 
-  //  std::cout << "Processed pages: " << processed_pages << "\n";
+    std::cout << "Processed pages: " << processed_pages << "\n";
 }
 
 
@@ -100,10 +103,10 @@ void Spider::process_next_data()
         {
             throw std::runtime_error("Downloaded page empty");
         }
-        /*else if (html.size() < 100)
+        else if (html.size() < 100)
         {
             throw std::runtime_error("HTML too small");
-        }*/
+        }
 
         std::string clean_text = indexer.clean_page(html);
         auto word_freq = indexer.count_words(clean_text);
@@ -130,7 +133,12 @@ void Spider::process_next_data()
         }
 
         processed_pages++;
-      //  std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
+        std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
+
+        if (processed_pages >= max_pages || safe_queue.queue_empty())
+        {
+            cond_v.notify_all();
+        }
     }
     catch (const std::exception& e) 
     {
@@ -142,6 +150,9 @@ void Spider::process_next_data()
 
 std::string Spider::download_page(const std::string& url)
 {
+
+    net::io_context io_context;
+
     if (url.empty()) 
     {
         throw std::runtime_error("URL is empty");
@@ -171,7 +182,7 @@ std::string Spider::download_page(const std::string& url)
     const std::string port = (protocol == "https") ? "443" : "80";
 
 
-    net::io_context io_context;
+    
 
     try 
     {

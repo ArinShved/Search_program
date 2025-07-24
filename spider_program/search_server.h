@@ -5,6 +5,7 @@
 #include <boost/beast/http.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/algorithm/string.hpp>
+#include <exception>
 
 #include "search_program.h"
 
@@ -27,4 +28,5 @@ private:
 
     unsigned short port;
     net::io_context ioc{ 1 };
+    std::string err_mes;
 };

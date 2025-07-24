@@ -18,6 +18,8 @@ public:
 	void work();
 	~ThreadPool();
 	void wait();
+
+	bool is_done();
 private:
 	std::vector<std::thread> threads;
 	SafeQueue<std::function<void()>> tasks;

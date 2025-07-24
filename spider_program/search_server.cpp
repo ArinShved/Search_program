@@ -12,7 +12,7 @@ void SearchServer::run()
     {
         tcp::acceptor acceptor{ ioc, {tcp::v4(), port} };
 
-        std::cout << "Search server running on port " << port << std::endl;
+       // std::cout << "Search server running on port " << port << std::endl;
 
         while (true) 
         {
@@ -150,35 +150,45 @@ void SearchServer::get(http::request<http::string_body>& req, beast::tcp_stream&
 void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream& stream)
 {
     std::vector<std::string> query_words;
+    std::vector<SearchResult> results;
 
-    auto pos = req.target().find('?');
-    if (pos != std::string::npos) 
+    try
     {
-        std::string str = req.target().substr(pos + 1);
-        std::vector<std::string> params;
-        boost::split(params, str, boost::is_any_of("&"));
-
-        for (const auto& param : params) 
+        auto pos = req.target().find('?');
+        if (pos != std::string::npos)
         {
-            if (param.starts_with("q=")) 
-            {
-                std::string query = param.substr(2);
-                boost::replace_all(query, "+", " ");
+            std::string str = req.target().substr(pos + 1);
+            std::vector<std::string> params;
+            boost::split(params, str, boost::is_any_of("&"));
 
-               
-                std::istringstream iss(query);
-                std::string word;
-                while (iss >> word) 
+            for (const auto& param : params)
+            {
+                if (param.starts_with("q="))
                 {
-                    query_words.push_back(word);
+                    std::string query = param.substr(2);
+                    boost::replace_all(query, "+", " ");
+
+
+                    std::istringstream iss(query);
+                    std::string word;
+                    while (iss >> word)
+                    {
+                        query_words.push_back(word);
+                    }
+                    break;
                 }
-                break;
             }
         }
-    }
 
- 
-    auto results = program.search_result(query_words, 10);
+
+        results = program.search_result(query_words, 10);
+
+        
+    }
+    catch (const std::exception& e) 
+    {
+        err_mes = e.what();
+    }
 
 
    std::ostringstream html;
@@ -263,16 +273,33 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
                     color: #666;
                     font-style: italic;
                 }
+                .error {
+                    color: #cc0000;
+                    background-color: #ffeeee;
+                    padding: 15px;
+                    border-radius: 5px;
+                    border-left: 4px solid #cc0000;
+                    margin-bottom: 20px;
+                }
             </style>
         </head>
         <body>
             <div class="container">
                 <h1>Search Results</h1>
+                )";
+
+    if (!err_mes.empty()) {
+        html << R"(
+                <div class="error">
+                    Error: )" << err_mes << R"(
+                </div>
+        )";
+    }
+
+    html << R"(
                 <div class="search-form">
                     <form action="/search" method="get">
                         <input type="text" name="q" value=")";
-
-
 
     if (!query_words.empty()) 
     {

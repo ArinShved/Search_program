@@ -73,7 +73,7 @@ void DataBase::create_table()
 
 void DataBase::insert_document(const std::string& url, const std::string& title)
 {
-     
+         
      pqxx::work w(c);
      try
      {
@@ -178,7 +178,14 @@ int DataBase::get_wordID(const std::string& word)
 std::vector<SearchResult> DataBase::search(const std::vector<std::string>& words)
 {
     std::vector<SearchResult> results;
+    
+   /* pqxx::connection s(conn_str);
 
+    if (!s.is_open())
+    {
+        throw std::runtime_error("Connection failed");
+    }
+    */
     try
     {
         pqxx::work w(c);

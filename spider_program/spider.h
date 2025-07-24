@@ -81,6 +81,8 @@ private:
 
     std::mutex db_mutex;
    
+    std::condition_variable cond_v;
+    std::mutex cond_mutex;
 
 
 };

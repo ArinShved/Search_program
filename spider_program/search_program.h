@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <mutex>
 
 #include "database.h"
 #include "indexer.h"
@@ -16,6 +17,7 @@ public:
 
 private:
     DataBase& db;
+    std::mutex mutex;
 
     std::vector<std::string> extract_words(const std::string& text);
 
