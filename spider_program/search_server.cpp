@@ -4,7 +4,7 @@ using tcp = boost::asio::ip::tcp;
 
 // проверить коректность закрытия
 
-SearchServer::SearchServer(SearchProgram& engine, unsigned short port) : program(engine), port(port) {}
+SearchServer::SearchServer(DataBase& db, unsigned short port) : db(db), port(port) {}
 
 void SearchServer::run() 
 {
@@ -40,6 +40,27 @@ void SearchServer::run()
     {
         std::cerr << "Server error: " << e.what() << "\n";
         throw;
+    }
+}
+
+std::vector<SearchResult> SearchServer::search_result(const std::vector<std::string>& query_words, int limit)
+{
+    if (query_words.empty())
+    {
+        return {};
+    }
+    std::lock_guard<std::mutex> lock(mutex);//Search error: Database search failed: Started new transaction while transaction was still active./n
+
+    //добавить кодировка
+    try
+    {
+        pqxx::work w(db.get_connection());
+        return db.search(w, query_words);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Search error: " << e.what() << "/n";
+        return {};
     }
 }
 
@@ -181,7 +202,7 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
         }
 
 
-        results = program.search_result(query_words, 10);
+        results = search_result(query_words, 10);
 
         
     }

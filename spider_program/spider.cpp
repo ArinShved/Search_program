@@ -115,9 +115,12 @@ void Spider::process_next_data()
         title = indexer.clean_for_db(title);
        // std::cout << title << "\n";
 
+        
         try 
         {
+            
             indexer.save_to_database(task.first, title, word_freq, db);
+            
         }
         catch (const std::exception& db_e) 
         {

@@ -30,7 +30,7 @@ set(SOURCE_FILES "main.cpp"
                  "spider.cpp" "spider.h"
                  "safe_queue.cpp" "safe_queue.h"
                  "thread_pool.cpp" "thread_pool.h"
-                 "search_program.cpp" "search_program.h"
+                 #"search_program.cpp" "search_program.h"
                  "search_server.cpp" "search_server.h"
                  #"test_files/fast_test_spider.cpp"
                   )

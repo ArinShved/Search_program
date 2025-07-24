@@ -71,11 +71,13 @@ void DataBase::create_table()
 
 };
 
-void DataBase::insert_document(const std::string& url, const std::string& title)
+void DataBase::insert_document(pqxx::work& w, const std::string& url, const std::string& title)
 {
-         
-     pqxx::work w(c);
-     try
+    w.exec_params("INSERT INTO documents (url, title) VALUES ($1, $2) "
+        "ON CONFLICT (url) DO UPDATE SET title = EXCLUDED.title",
+        url, title);
+    // pqxx::work w(c);
+    /* try
      {
         w.exec_params("INSERT INTO documents (url, title) VALUES ($1, $2) "
                       "ON CONFLICT (url) DO UPDATE SET title = EXCLUDED.title",
@@ -87,16 +89,19 @@ void DataBase::insert_document(const std::string& url, const std::string& title)
     {
         w.abort();
         throw std::runtime_error("Failed to insert document: " + std::string(e.what()) + "\n");
-    }
+    }*/
 }
 
-void DataBase::insert_word(const std::string& word)
+void DataBase::insert_word(pqxx::work& w, const std::string& word)
 {
-    pqxx::work w(c);
-    try
+    w.exec_params("INSERT INTO words (word) VALUES ($1) "
+        "ON CONFLICT (word) DO NOTHING", word);
+   // pqxx::work w(c);
+   /* try
     {
         
-        pqxx::result r = w.exec_params("INSERT INTO words (word) VALUES ($1) RETURNING id", word);
+        pqxx::result r = w.exec_params("INSERT INTO words (word) VALUES ($1) "
+            "ON CONFLICT (word) DO NOTHING", word);//("INSERT INTO words (word) VALUES ($1) RETURNING id", word);
 
         w.commit();
     }
@@ -104,13 +109,17 @@ void DataBase::insert_word(const std::string& word)
     {
         w.abort();
         throw std::runtime_error("Failed to insert word: " + std::string(e.what()) + "/n");
-    }
+    }*/
 }
 
-void DataBase::insert_document_word(int doc_id, int word_id, int frequency)
+void DataBase::insert_document_word(pqxx::work& w, int doc_id, int word_id, int frequency)
 {
-    pqxx::work w(c);
-    try 
+    w.exec_params("INSERT INTO document_word (document_id, word_id, frequency) "
+        "VALUES ($1, $2, $3) "
+        "ON CONFLICT (document_id, word_id) DO UPDATE SET frequency = $3",
+        doc_id, word_id, frequency);
+   // pqxx::work w(c);
+  /* try
     {
         
         w.exec_params("INSERT INTO document_word (document_id, word_id, frequency) "
@@ -124,15 +133,22 @@ void DataBase::insert_document_word(int doc_id, int word_id, int frequency)
     {
         w.abort();
         throw std::runtime_error("Failed to insert document-word relation: " + std::string(e.what()) + "/n");
-    }
+    }*/
+}
+
+void DataBase::clear_document_words(pqxx::work& w, int doc_id) 
+{
+    w.exec_params("DELETE FROM document_word WHERE document_id = $1", doc_id);
 }
 
 
-int DataBase::get_documentID(const std::string& url)
+int DataBase::get_documentID(pqxx::work& w, const std::string& url)
 {
-    try
+    pqxx::result r = w.exec_params("SELECT id FROM documents WHERE url = $1", url);
+    return r[0][0].as<int>();
+    /*try
     {
-        pqxx::work w(c);
+       // pqxx::work w(c);
         pqxx::result r = w.exec_params("SELECT id FROM documents WHERE url = $1", url);
 
 
@@ -149,14 +165,16 @@ int DataBase::get_documentID(const std::string& url)
     catch (const std::exception& e) 
     {
         throw std::runtime_error("Failed to find ID: " + std::string(e.what()) + "/n");
-    }
+    }*/
 }
 
-int DataBase::get_wordID(const std::string& word)
+int DataBase::get_wordID(pqxx::work& w, const std::string& word)
 {
-    try
+    pqxx::result r = w.exec_params("SELECT id FROM words WHERE word = $1", word);
+    return r[0][0].as<int>();
+   /* try
     {
-        pqxx::work w(c);
+       // pqxx::work w(c);
         pqxx::result r = w.exec_params("SELECT id FROM words WHERE word = $1", word);
 
         if (r.empty() ||r[0][0].is_null()) 
@@ -172,10 +190,10 @@ int DataBase::get_wordID(const std::string& word)
     catch (const std::exception& e)
     {
         throw std::runtime_error("Failed to find ID: " + std::string(e.what()) + "/n");
-    }
+    }*/
 }
 
-std::vector<SearchResult> DataBase::search(const std::vector<std::string>& words)
+std::vector<SearchResult> DataBase::search(pqxx::work& w, const std::vector<std::string>& words)
 {
     std::vector<SearchResult> results;
     
@@ -188,7 +206,8 @@ std::vector<SearchResult> DataBase::search(const std::vector<std::string>& words
     */
     try
     {
-        pqxx::work w(c);
+
+       // pqxx::work w(c);
 
     
         std::string query = "SELECT d.url, d.title, SUM(dw.frequency) as relevance "

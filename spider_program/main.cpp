@@ -6,7 +6,6 @@
 #include "ini_parser.h"
 #include "indexer.h"
 #include "spider.h"
-#include "search_program.h"
 #include "search_server.h"
 
 //#pragma comment(lib,"shell32")
@@ -57,8 +56,8 @@ void run_search_server(INIParser& ini, DataBase& db)
 {
     try 
     {
-        SearchProgram search_program(db);
-        SearchServer server(search_program, ini.get_port());
+       // SearchProgram search_program(db);
+        SearchServer server(db, ini.get_port());
         server.run();
     }
     catch (const std::exception& e) 
