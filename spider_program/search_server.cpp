@@ -49,13 +49,15 @@ std::vector<SearchResult> SearchServer::search_result(const std::vector<std::str
     {
         return {};
     }
-    std::lock_guard<std::mutex> lock(mutex);//Search error: Database search failed: Started new transaction while transaction was still active./n
+    //std::lock_guard<std::mutex> lock(mutex);//Search error: Database search failed: Started new transaction while transaction was still active./n
 
     //добавить кодировка
     try
     {
         pqxx::work w(db.get_connection());
-        return db.search(w, query_words);
+        auto result = db.search(w, query_words);
+        w.commit();
+        return result;
     }
     catch (const std::exception& e)
     {

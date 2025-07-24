@@ -56,7 +56,7 @@ void run_search_server(INIParser& ini, DataBase& db)
 {
     try 
     {
-       // SearchProgram search_program(db);
+      
         SearchServer server(db, ini.get_port());
         server.run();
     }
@@ -72,9 +72,11 @@ int main() {
     {
         INIParser ini_parser("spider.ini");
         DataBase db(ini_parser.db_conn_str());
+        DataBase db_search(ini_parser.db_conn_str());
 
         std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
-        std::thread search_pr(run_search_server, std::ref(ini_parser), std::ref(db));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        std::thread search_pr(run_search_server, std::ref(ini_parser), std::ref(db_search));
         
 
         std::this_thread::sleep_for(std::chrono::seconds(2));

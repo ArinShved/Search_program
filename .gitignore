@@ -2,6 +2,7 @@
 *.vcxproj*
 *.vcxproj.filters
 *.user
+*.json
 CMakeSetting.json
 
 libpqxx-7.10.1/

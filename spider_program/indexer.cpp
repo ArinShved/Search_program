@@ -13,8 +13,6 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
        
         pqxx::work w(db.get_connection());
 
-        
-       // auto conn = db.get_connection();
         try 
         {
             std::string clean_url = clean_for_db(url);
@@ -30,23 +28,9 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
             }
 
             db.insert_document(w, clean_url, clean_title);
-           /* w.exec_params("INSERT INTO documents (url, title) VALUES ($1, $2) "
-                "ON CONFLICT (url) DO UPDATE SET title = EXCLUDED.title",
-                clean_url, clean_title
-            );*/
 
             int doc_id = db.get_documentID(w, clean_url);
             
-            
-           /* pqxx::result r = w.exec_params("SELECT id FROM documents WHERE url = $1", clean_url);
-            if (r.empty()) 
-            {
-                throw std::runtime_error("Document not found: " + clean_url);
-            }
-
-            int doc_id = r[0][0].as<int>();;*/
-                     
-          //  w.exec_params("DELETE FROM document_word WHERE document_id = $1", doc_id);
             db.clear_document_words(w, doc_id);
             
             for (const auto& [word, freq] : word_freq) 
@@ -55,18 +39,14 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
                 {
                     try 
                     {
-                        
-                       /* w.exec_params("INSERT INTO words (word) VALUES ($1) "
-                                      "ON CONFLICT (word) DO NOTHING",word);*/
+                      
                         db.insert_word(w, word);
 
                         int word_id = db.get_wordID(w, word);
 
                         db.insert_document_word(w, doc_id, word_id, freq);
                         
-                        /*w.exec_params("INSERT INTO document_word (document_id, word_id, frequency) "
-                                     "SELECT $1, id, $3 FROM words WHERE word = $2",
-                                     doc_id, word, freq);*/
+                     
                     }
                     catch (const std::exception& e) 
                     {
