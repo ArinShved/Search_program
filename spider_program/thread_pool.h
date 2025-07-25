@@ -17,7 +17,7 @@ public:
 	void submit(std::function<void()> func);
 	void work();
 	~ThreadPool();
-	void wait();
+	void stop_with_wait();
 
 	bool is_done();
 private:

@@ -34,16 +34,7 @@ void ThreadPool::work()
 
 ThreadPool::~ThreadPool() 
 {
-    done = true;
-    tasks.set_done();
-    
-    for (std::thread& i : threads) 
-    {
-        if (i.joinable())
-        {
-            i.join();
-        }
-    }
+    stop_with_wait();
 };
 
     
@@ -56,7 +47,7 @@ void ThreadPool::submit(std::function<void()> func)
     tasks.queue_push(func);
 };
 
-void ThreadPool::wait() 
+void ThreadPool::stop_with_wait() 
 {
     while (!tasks.queue_empty() && !done)
     {

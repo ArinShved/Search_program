@@ -56,7 +56,7 @@ void Spider::run()
     }*/
     
     
-    thread_pool.wait();
+    thread_pool.stop_with_wait();
 
     std::cout << "Processed pages: " << processed_pages << "\n";
 }
@@ -136,7 +136,7 @@ void Spider::process_next_data()
         }
 
         processed_pages++;
-        std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
+       // std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
 
         if (processed_pages >= max_pages || safe_queue.queue_empty())
         {
@@ -368,5 +368,6 @@ bool Spider::skip_link(const std::string& link)
  Spider::~Spider()
  {
     // std::cout << "Spider destruct" << "\n";
-     thread_pool.wait();
+     cond_v.notify_all();
+     thread_pool.stop_with_wait();
  }

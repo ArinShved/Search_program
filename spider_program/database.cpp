@@ -22,7 +22,7 @@
      }
 }
 
-bool DataBase::database_connect(const std::string& conn_str)
+bool DataBase::database_reconnect(const std::string& conn_str)
 {
     try
     {
@@ -34,7 +34,7 @@ bool DataBase::database_connect(const std::string& conn_str)
         c = pqxx::connection(conn_str);
         return c.is_open();
     }
-    catch (const std::exception& e)
+    catch (const pqxx::broken_connection& e)
     {
         throw std::runtime_error("Connection failed: " + std::string(e.what()));
     }

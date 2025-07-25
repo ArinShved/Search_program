@@ -73,30 +73,32 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
 
 std::string Indexer::clean_page(const std::string& html_page)
 {
-    std::string text;
+    std::wstring winput = utf8_to_wstring(html_page);
+    std::wstring text;
     bool tag = false;
     bool space = true; 
+    std::string clean_html = clean_for_db(html_page);
 
-    for (char c : html_page) 
+    for (wchar_t c : winput) 
     {
-        if (c <= -1 || c >= 255)//перепроверить
+      /*  if (c <= -1 || c >= 255)
         {
             continue;
 
-        }
+        }*/
 
-        if (c == '<') 
+        if (c == L'<') 
         {
             tag = true;
             
             if (!space && !text.empty()) 
             {
-                text += ' ';
+                text += L' ';
                 space = true;
             }
             continue;
         }
-        else if (c == '>') 
+        else if (c == L'>') 
         {
             tag = false;
             continue;
@@ -104,33 +106,34 @@ std::string Indexer::clean_page(const std::string& html_page)
 
         if (!tag) 
         {
-            if (std::isspace(c) || (std::ispunct(static_cast<unsigned char>(c))))
+            if (iswspace(c) || iswpunct(c))
             {
                 if (!space) 
                 {
-                    text += ' ';
+                    text += L' ';
                     space = true;
                 }
             }
             else 
             {
-                text += std::tolower(static_cast<unsigned char>(c));
+                text += tolower(c);
                 space = false;
             }
         }
     }
 
     
-    size_t start = text.find_first_not_of(' ');
+    size_t start = text.find_first_not_of(L' ');
 
-    if (start == std::string::npos)
+    if (start == std::wstring::npos)
     {
         return "";
     }
 
-    size_t end = text.find_last_not_of(' ');
-    std::string result = text.substr(start, end - start + 1);
-    return result;
+    size_t end = text.find_last_not_of(L' ');
+    std::wstring result = text.substr(start, end - start + 1);
+    
+    return wstring_to_utf8(result);
     
 };
 
@@ -139,31 +142,29 @@ std::map<std::string, int> Indexer::count_words(const std::string& html_page)
 {
     std::map<std::string, int> word_f;
     std::string html = clean_page(html_page);
-    std::istringstream iss(html);
+    std::wstring wstr = utf8_to_wstring(html);
+    
 
-    std::string w;
+    std::wstring w;
 
-    while (iss >> w)
+    for (wchar_t c : wstr)
     {
-        while (!w.empty() && std::ispunct(w.front()))
+        if (iswalnum(c))
         {
-            w.erase(0, 1);
+            w += c;
         }
-
-        while (!w.empty() && std::ispunct(w.back()))
+        else if (!w.empty())
         {
-            w.pop_back();
-        }
-       
-        if (w.size() >= 3 && w.size() <= 32)
-        {
-            if (!w.empty())
+            if (w.size() >= 3 && w.size() <= 32)
             {
-                word_f[w]++;
+                if (!w.empty())
+                {
+                    word_f[wstring_to_utf8(w)]++;
+                }
+                w.clear();
             }
         }
     }
-
     return word_f;
 };
 
@@ -189,9 +190,9 @@ std::string Indexer::get_title(const std::string& html_page)
         }
     }
 
-    boost::replace_all(title, "&amp;", "&");
-    boost::to_lower(title);
-    return title;
+    std::string clean_title = clean_for_db(title);
+    boost::to_lower(clean_title);
+    return clean_title;
     
 }
 
@@ -202,23 +203,25 @@ std::string Indexer::clean_for_db(const std::string& input)
         return "";
     }
 
-    std::string output;
-    static const std::unordered_map<std::string_view, char> del_s = {
-        {"&amp;", '&'},{"&lt;", '<'},{"&gt;", '>'},{"&quot;", '"'},
-        {"&apos;", '\''},{"&nbsp;", ' '},   
-    };
-    output.reserve(input.size());
+    std::wstring winput = utf8_to_wstring(input);
 
-    for (int i = 0; i < input.size(); ++i)
+    std::wstring output;
+    static const std::unordered_map<std::wstring, wchar_t> del_s = {
+        {L"&amp;", L'&'},{L"&lt;", L'<'},{L"&gt;", L'>'},{L"&quot;", L'"'},
+        {L"&apos;", L'\''},{L"&nbsp;", L' '},   
+    };
+
+    
+    for (int i = 0; i < winput.size(); ++i)
     {
         char c = input[i]; 
         bool stop = false;
 
-        if (c == '&')
+        if (c == L'&')
         {
             for (auto& [word, swap] : del_s)
             {
-                if (i + word.size() <= input.size() && input.compare(i, word.size(), word) == 0)
+                if (i + word.size() <= input.size() && winput.compare(i, word.size(), word) == 0)
                 {
                     output += swap;
                     i += word.size();
@@ -233,48 +236,27 @@ std::string Indexer::clean_for_db(const std::string& input)
             }
         }
             
+        if (iswalnum(winput[i]) || winput[i] == L' ') {
+            output += towlower(winput[i]);
+        }
 
-        /*    if (i + 4 < input.size() && input.substr(i, 5) == "&amp;")
-            {
-                output += '&';
-                i += 4;
-                continue;
-            }
-            if (i + 3 < input.size() && input.substr(i, 4) == "&lt;")
-            {
-                output += '<';
-                i += 3;
-                continue;
-            }
-            if (i + 3 < input.size() && input.substr(i, 4) == "&gt;")
-            {
-                output += '>';
-                i += 3;
-                continue;
-            }
-            if (i + 5 < input.size() && input.substr(i, 6) == "&quot;") {
-                output += '"';
-                i += 5;
-                continue;
-            }
-            if (i + 5 < input.size() && input.substr(i, 6) == "&apos;") {
-                output += '\'';
-                i += 5;
-                continue;
-            }
-            if (i + 5 < input.size() && input.substr(i, 6) == "&nbsp;") {
-                output += ' ';
-                i += 5;
-                continue;
-            }
-        }*/
-        
-       
-
-        if (c >= 32 && c <= 126)
+        /*if (c >= 47 && c <= 255)// (c>=-1 && c <= 255)
         { 
             output += c;
-        }
+        }*/
     }
-    return output;
+    return wstring_to_utf8(output);
+}
+
+std::wstring Indexer::utf8_to_wstring(const std::string& str)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> c;
+    return c.from_bytes(str);
+}
+
+
+std::string Indexer::wstring_to_utf8(const std::wstring& wstr)
+{
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> c;
+    return c.to_bytes(wstr);
 }

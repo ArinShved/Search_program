@@ -36,7 +36,7 @@ void run_spider(INIParser& ini, DataBase& db)
            // "https://learn.microsoft.com/ru-ru/cpp/overview/visual-cpp-in-visual-studio?view=msvc-170",
            // "https://en.cppreference.com",
             ini.get_spider_data().start_url,
-            0,//ini.get_spider_data().max_depth,
+            1,//ini.get_spider_data().max_depth,
             ini.get_spider_data().max_threads,
             1000,
             db,

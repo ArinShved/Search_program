@@ -37,7 +37,7 @@ private:
 	std::unique_ptr<pqxx::connection> l;
 	pqxx::connection c;
 
-	bool database_connect(const std::string& conn_str);
+	bool database_reconnect(const std::string& conn_str);
 	void create_table();
 
 	std::string conn_str;
