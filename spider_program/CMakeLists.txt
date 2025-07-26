@@ -71,6 +71,7 @@ target_compile_features(spider_program PRIVATE cxx_std_17)
 
 target_link_libraries(spider_program PRIVATE pqxx
                                              Boost::locale
+                                             ${Boost_LIBRARIES}
                                              OpenSSL::SSL
                                              OpenSSL::Crypto)#${Boost_LIBRARIES})# Boost::locale)
 

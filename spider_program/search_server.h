@@ -5,6 +5,7 @@
 #include <boost/beast/http.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/locale/encoding.hpp>
 #include <exception>
 
 #include "database.h"
@@ -20,6 +21,7 @@ public:
     ~SearchServer();
     void run();
     std::vector<SearchResult> search_result(const std::vector<std::string>& query_words, int limit);
+    std::string decode_url(const std::string& url);
 
 private:
     void request(beast::tcp_stream& stream);

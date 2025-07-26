@@ -1,6 +1,6 @@
 #include <iostream>
-//#include <Windows.h>
-
+#include <csignal>
+#include <atomic>
 
 #include "database.h"
 #include "ini_parser.h"
@@ -9,6 +9,8 @@
 #include "search_server.h"
 
 //#pragma comment(lib,"shell32")
+
+
 
 void open_browser(const std::string& url) {
 #ifdef _WIN32
@@ -25,18 +27,14 @@ void open_browser(const std::string& url) {
 }
 
 
+
 void run_spider(INIParser& ini, DataBase& db) 
 {
     try 
     {
         Spider spider(
-            //"https://metanit.com/common/",
-           // "https://www.postgresql.org/docs/current/sql-insert.html",
-           // "https://en.cppreference.com",
-           // "https://learn.microsoft.com/ru-ru/cpp/overview/visual-cpp-in-visual-studio?view=msvc-170",
-           // "https://en.cppreference.com",
             ini.get_spider_data().start_url,
-            1,//ini.get_spider_data().max_depth,
+            ini.get_spider_data().max_depth,
             ini.get_spider_data().max_threads,
             1000,
             db,
@@ -68,6 +66,8 @@ void run_search_server(INIParser& ini, DataBase& db)
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);
+
+    
     try
     {
         std::cout << "Please, wait...\n";
@@ -86,9 +86,18 @@ int main() {
         open_browser(url);
 
         std::cout << "\n\nIf Browser doesn't open, please open the link: " + url + "\n\n";
+
+       
     
-        spider_pr.join();
-        search_pr.join();
+        if (spider_pr.joinable())
+        {
+            spider_pr.join();
+        }
+        if (search_pr.joinable())
+        {
+            search_pr.join();
+        }
+        
 
 
         //завершилась с кодом 3221225786!
@@ -98,6 +107,11 @@ int main() {
     catch (const std::exception& e) 
     {
         std::cerr << "Fatal error: " << e.what() << std::endl;
+        return 1;
+    }
+    catch (...)
+    {
+        std::cerr << "Unknown fatal error\n ";
         return 1;
     }
    

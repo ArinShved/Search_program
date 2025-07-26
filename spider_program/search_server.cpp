@@ -2,8 +2,6 @@
 
 using tcp = boost::asio::ip::tcp;
 
-// проверить коректность закрытия
-
 SearchServer::SearchServer(DataBase& db, unsigned short port) : db(db), port(port) {}
 
 void SearchServer::run() 
@@ -50,9 +48,8 @@ std::vector<SearchResult> SearchServer::search_result(const std::vector<std::str
     {
         return {};
     }
-    //std::lock_guard<std::mutex> lock(mutex);//Search error: Database search failed: Started new transaction while transaction was still active./n
+    //std::lock_guard<std::mutex> lock(mutex);
 
-    //добавить кодировка
     try
     {
         pqxx::work w(db.get_connection());
@@ -95,7 +92,7 @@ void SearchServer::get(http::request<http::string_body>& req, beast::tcp_stream&
     }
     else {
         http::response<http::string_body> res{ http::status::ok, req.version() };
-        res.set(http::field::content_type, "text/html");
+        res.set(http::field::content_type, "text/html; charset=utf-8");
         res.body() = R"(
 <html>
 <head>
@@ -175,6 +172,7 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
 {
     std::vector<std::string> query_words;
     std::vector<SearchResult> results;
+    err_mes.clear();
 
     try
     {
@@ -187,12 +185,10 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
 
             for (const auto& param : params)
             {
-                if (param.starts_with("q="))
+                size_t eq_pos = param.find('=');
+                if (eq_pos != std::string::npos && param.substr(0, eq_pos) == "q")
                 {
-                    std::string query = param.substr(2);
-                    boost::replace_all(query, "+", " ");
-
-
+                    std::string query = decode_url(param.substr(eq_pos + 1));
                     std::istringstream iss(query);
                     std::string word;
                     while (iss >> word)
@@ -203,6 +199,8 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
                 }
             }
         }
+        
+
 
 
         results = search_result(query_words, 10);
@@ -366,7 +364,7 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
     )";
 
     http::response<http::string_body> res{ http::status::ok, req.version() };
-    res.set(http::field::content_type, "text/html");
+    res.set(http::field::content_type, "text/html; charset=utf-8");
     res.body() = html.str();
     res.prepare_payload();
     http::write(stream, res);
@@ -378,4 +376,40 @@ SearchServer::~SearchServer()
     stop = true;
     ioc.stop();
     std::cout << "Server stopped\n";
+}
+
+std::string SearchServer::decode_url(const std::string& url)
+{
+    std::ostringstream code;
+
+    for (int i = 0; i < url.size(); ++i)
+    {
+        if (url[i] == '+')
+        {
+            code << ' '; 
+        }
+        else if (url[i] == '%' && i + 2 < url.size()) 
+        {
+           
+            char hex[3] = { url[i + 1], url[i + 2], '\0' };
+            char* end;
+            long val = strtol(hex, &end, 16);
+
+            if (*end == '\0') 
+            {
+                code << static_cast<char>(val);
+                i += 2;
+            }
+            else 
+            {
+                code << url[i]; 
+            }
+        }
+        else 
+        {
+            code << url[i];
+        }
+    }
+
+    return code.str();
 }

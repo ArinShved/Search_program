@@ -6,7 +6,7 @@ namespace net = boost::asio;
 using tcp = net::ip::tcp;
 
 Spider::Spider(
-    const std::string& _start_url,// mb просто передевать ини-парсер и бд. сделать второй конструктор. 
+    const std::string& _start_url, 
     int _max_depth,
     size_t _max_threads,
     size_t _max_pages,
@@ -23,20 +23,6 @@ Spider::Spider(
     thread_pool(_max_threads)
 {
 }
-
-/*Spider::Spider(DataBase& _db,
-    INIParser& _ini_pars, bool _domain_filter)
-    :
-    db(_db), ini_pars(_ini_pars), domain_filter(_domain_filter)
-{
-    start_url = ini_pars.get_spider_data().start_url;
-    max_depth = ini_pars.get_spider_data().max_depth;
-    max_threads = ini_pars.get_spider_data().max_threads;
-    max_pages = 1000;
-    thread_pool(max_threads);
-
-
-}*/
 
 
 void Spider::run()
@@ -58,7 +44,7 @@ void Spider::run()
     
     thread_pool.stop_with_wait();
 
-    std::cout << "Processed pages: " << processed_pages << "\n";
+  //  std::cout << "Processed pages: " << processed_pages << "\n";
 }
 
 
@@ -81,7 +67,6 @@ void Spider::add_task(const std::string& url, int depth)
 void Spider::process_next_data()
 {
 
-   // auto task = safe_queue.queue_pop();
     std::pair<std::string, int> task;
     try 
     {
@@ -136,7 +121,7 @@ void Spider::process_next_data()
         }
 
         processed_pages++;
-       // std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
+      //  std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
 
         if (processed_pages >= max_pages || safe_queue.queue_empty())
         {

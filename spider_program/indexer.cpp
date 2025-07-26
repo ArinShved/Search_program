@@ -15,7 +15,7 @@ void Indexer::save_to_database(const std::string& url, const std::string& title,
 
         try 
         {
-            std::string clean_url = clean_for_db(url);
+            std::string clean_url = url;//clean_for_db(url);
             if (clean_url.empty()) 
             {
                 throw std::runtime_error("Empty URL after cleaning");
@@ -81,11 +81,6 @@ std::string Indexer::clean_page(const std::string& html_page)
 
     for (wchar_t c : winput) 
     {
-      /*  if (c <= -1 || c >= 255)
-        {
-            continue;
-
-        }*/
 
         if (c == L'<') 
         {
@@ -132,6 +127,7 @@ std::string Indexer::clean_page(const std::string& html_page)
 
     size_t end = text.find_last_not_of(L' ');
     std::wstring result = text.substr(start, end - start + 1);
+    
     
     return wstring_to_utf8(result);
     
@@ -196,6 +192,7 @@ std::string Indexer::get_title(const std::string& html_page)
     
 }
 
+
 std::string Indexer::clean_for_db(const std::string& input) 
 {
     if (input.empty())
@@ -214,7 +211,7 @@ std::string Indexer::clean_for_db(const std::string& input)
     
     for (int i = 0; i < winput.size(); ++i)
     {
-        char c = input[i]; 
+        wchar_t c = input[i]; 
         bool stop = false;
 
         if (c == L'&')
@@ -240,10 +237,7 @@ std::string Indexer::clean_for_db(const std::string& input)
             output += towlower(winput[i]);
         }
 
-        /*if (c >= 47 && c <= 255)// (c>=-1 && c <= 255)
-        { 
-            output += c;
-        }*/
+        
     }
     return wstring_to_utf8(output);
 }
