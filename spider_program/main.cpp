@@ -55,7 +55,6 @@ void run_search_server(INIParser& ini, DataBase& db)
 {
     try 
     {
-      
         SearchServer server(db, ini.get_port());
         server.run();
     }
@@ -91,21 +90,13 @@ int main() {
         );
 
        
-      //  std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
+     
         std::thread spider_pr([&spider]() {spider.run(); });
         std::this_thread::sleep_for(std::chrono::seconds(2));
 
         SearchServer server(db_search, ini_parser.get_port());
         std::thread search_pr([&server]() {server.run();});
                
-
-     // std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
-      //std::this_thread::sleep_for(std::chrono::seconds(1));
-     // std::thread search_pr(run_search_server, std::ref(ini_parser), std::ref(db_search));
-     // std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
-        
-
-        //std::this_thread::sleep_for(std::chrono::seconds(2));
         std::string url = "http://localhost:" + std::to_string(ini_parser.get_port());
         open_browser(url);
 
@@ -128,25 +119,6 @@ int main() {
 
         
        
-      
-    
-       /* if (spider_pr.joinable())
-        {
-            
-            spider_pr.join();
-        }
-
-        if (server_pr.joinable())
-        {
-            server_pr.join();
-        }
-
-        */
-        
-        
-
-
-        //завершилась с кодом 3221225786!
         return 0;
 
     }

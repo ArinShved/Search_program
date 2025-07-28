@@ -84,7 +84,7 @@ void Spider::process_next_data()
         return;
     }
 
-    //Started new transaction while transaction was still active.
+   
     std::lock_guard<std::mutex> lock(db_mutex);//нет ошибки, но значительно сократилась скорость
 
     try 

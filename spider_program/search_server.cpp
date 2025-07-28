@@ -179,11 +179,12 @@ void SearchServer::request(beast::tcp_stream& stream)
     }
     catch (const boost::system::system_error& e)
     {
-        if (stop.load() || e.code() != boost::asio::error::operation_aborted)
+        if (stop.load() || e.code() == boost::asio::error::operation_aborted)
         {
-            std::cerr << "Read error: " << e.what() << "\n";
+            return;
            
         }
+        std::cerr << "Read error: " << e.what() << "\n";
     }
     catch (const std::exception& e)
     {
