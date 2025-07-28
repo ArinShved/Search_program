@@ -2,44 +2,114 @@
 
 using tcp = boost::asio::ip::tcp;
 
-SearchServer::SearchServer(DataBase& db, unsigned short port) : db(db), port(port) {}
+SearchServer::SearchServer(DataBase& db, unsigned short port) : db(db), port(port), acceptor(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
+{
+    acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+    
+}
 
 void SearchServer::run() 
 {
-    try 
+    try
     {
-        tcp::acceptor acceptor{ ioc, {tcp::v4(), port} };
+        run_accept();
+        ioc.run();
 
-       // std::cout << "Search server running on port " << port << std::endl;
-
-        while (!stop) 
-        {
-            beast::tcp_stream stream(ioc);
-            acceptor.accept(stream.socket());
-
-            try 
-            {
-                request(stream);
-            }
-            catch (const std::exception& e) 
-            {
-                std::cerr << "Error handling request: " << e.what() << "\n";
-
-                //ошибка 500
-                http::response<http::string_body> res{ http::status::internal_server_error, 11 };
-
-                res.set(http::field::content_type, "text/plain");
-                res.body() = "Internal Server Error";
-                res.prepare_payload();
-                http::write(stream, res);
-            }
-        }
     }
     catch (const std::exception& e) 
     {
         std::cerr << "Server error: " << e.what() << "\n";
         throw;
     }
+}
+
+void SearchServer::run_accept()
+{
+    acceptor.async_accept(
+        [this](boost::system::error_code ec, tcp::socket socket)
+        {
+            if (ec)
+            {
+                if (ec != boost::asio::error::operation_aborted)
+                {
+                    std::cerr << "Accept error: " << ec.message() << "\n";
+                }
+                return;
+            }
+
+            if (stop)
+            {
+                boost::system::error_code s_ec;
+                socket.shutdown(tcp::socket::shutdown_both, s_ec);
+                socket.close(s_ec);
+                return;
+            }
+
+            auto stream = std::make_shared<beast::tcp_stream>(std::move(socket));
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                conn.push_back(stream);
+            }
+
+            boost::asio::dispatch(stream->get_executor(), [this, stream]()
+                {
+                    try
+                    {
+                        request(*stream);
+                    }
+                    catch (const std::exception& e)
+                    {
+                        std::cerr << "Request error: " << e.what() << "\n";
+                    }
+
+
+
+                    {
+                        std::lock_guard<std::mutex> lock(mutex);
+                        conn.erase(std::remove(conn.begin(), conn.end(), stream), conn.end());
+                    }
+                });
+
+            if (!stop)
+            {
+                run_accept();
+            }
+
+        });
+}
+
+void SearchServer::stop_server()
+{
+    stop = true;
+   // std::cout << "Stop called\n";
+
+
+    boost::system::error_code ec;
+    acceptor.cancel(ec);
+
+   // std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    {
+        std::lock_guard<std::mutex> lock(mutex);
+        for (auto& stream : conn)
+        {
+            boost::system::error_code s_ec;
+            stream->socket().shutdown(tcp::socket::shutdown_both, s_ec);
+            stream->socket().close(s_ec);
+        }
+        conn.clear();
+    }
+
+        
+   
+
+    if (!ioc.stopped())
+    {
+        ioc.stop();
+    }
+
+    acceptor.close(ec);
+
 }
 
 std::vector<SearchResult> SearchServer::search_result(const std::vector<std::string>& query_words, int limit)
@@ -68,21 +138,65 @@ void SearchServer::request(beast::tcp_stream& stream)
 {
     beast::flat_buffer buffer;
     http::request<http::string_body> req;
-    http::read(stream, buffer, req);
+   // stream.expires_after(std::chrono::seconds(30));
 
-    if (req.method() == http::verb::get) 
-    {
-        get(req, stream);
+    try {
+        boost::system::error_code ec;
+        http::read(stream, buffer, req);
+
+        if (ec) {
+            
+            if (ec == beast::http::error::end_of_stream) {
+                return;
+            }
+            
+            if (ec == boost::asio::error::operation_aborted && stop.load()) {
+                return;
+            }
+            
+            throw boost::system::system_error(ec);
+        }
+
+        if (stop.load()) 
+        {
+            return;
+        }
+
+        if (req.method() == http::verb::get)
+        {
+            
+            get(req, stream);
+
+        }
+        else
+        {
+            http::response<http::string_body> res{ http::status::bad_request, req.version() };
+            res.set(http::field::content_type, "text/plain");
+            res.body() = "Invalid request method";
+            res.prepare_payload();
+            http::write(stream, res);
+        }
     }
-    else 
-    { //ошибка 400
-        http::response<http::string_body> res{ http::status::bad_request, req.version() };
-        res.set(http::field::content_type, "text/plain");
-        res.body() = "Invalid request method";
-        res.prepare_payload();
-        http::write(stream, res);
+    catch (const boost::system::system_error& e)
+    {
+        if (stop.load() || e.code() != boost::asio::error::operation_aborted)
+        {
+            std::cerr << "Read error: " << e.what() << "\n";
+           
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Request processing error: " << e.what() << "\n";
+    }
+
+    if (!stop.load())
+    {
+        boost::system::error_code s_ec;
+        stream.socket().shutdown(tcp::socket::shutdown_both, s_ec);
     }
 }
+
 
 void SearchServer::get(http::request<http::string_body>& req, beast::tcp_stream& stream)
 {
@@ -367,15 +481,20 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
     res.set(http::field::content_type, "text/html; charset=utf-8");
     res.body() = html.str();
     res.prepare_payload();
-    http::write(stream, res);
+
+    if (!stop) {
+        http::write(stream, res);
+    }
+   
     
 }
 
+
 SearchServer::~SearchServer() 
 {
-    stop = true;
-    ioc.stop();
-    std::cout << "Server stopped\n";
+    stop_server();
+    
+ //   std::cout << "\nServer stopped\n";
 }
 
 std::string SearchServer::decode_url(const std::string& url)

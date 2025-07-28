@@ -1,6 +1,7 @@
 #include <iostream>
 #include <csignal>
 #include <atomic>
+#include <future>
 
 #include "database.h"
 #include "ini_parser.h"
@@ -66,37 +67,82 @@ void run_search_server(INIParser& ini, DataBase& db)
 
 int main() {
     SetConsoleOutputCP(CP_UTF8);
+    INIParser ini_parser("spider.ini");
+    DataBase db(ini_parser.db_conn_str());
+    DataBase db_search(ini_parser.db_conn_str());
 
-    
+
     try
     {
+   
         std::cout << "Please, wait...\n";
 
         INIParser ini_parser("spider.ini");
         DataBase db(ini_parser.db_conn_str());
         DataBase db_search(ini_parser.db_conn_str());
 
-        std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
-        std::this_thread::sleep_for(std::chrono::seconds(1));
-        std::thread search_pr(run_search_server, std::ref(ini_parser), std::ref(db_search));
+        Spider spider(
+            ini_parser.get_spider_data().start_url,
+            ini_parser.get_spider_data().max_depth,
+            ini_parser.get_spider_data().max_threads,
+            1000,
+            db,
+            false
+        );
+
+       
+      //  std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
+        std::thread spider_pr([&spider]() {spider.run(); });
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+
+        SearchServer server(db_search, ini_parser.get_port());
+        std::thread search_pr([&server]() {server.run();});
+               
+
+     // std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
+      //std::this_thread::sleep_for(std::chrono::seconds(1));
+     // std::thread search_pr(run_search_server, std::ref(ini_parser), std::ref(db_search));
+     // std::thread spider_pr(run_spider, std::ref(ini_parser), std::ref(db));
         
 
-        std::this_thread::sleep_for(std::chrono::seconds(2));
+        //std::this_thread::sleep_for(std::chrono::seconds(2));
         std::string url = "http://localhost:" + std::to_string(ini_parser.get_port());
         open_browser(url);
 
         std::cout << "\n\nIf Browser doesn't open, please open the link: " + url + "\n\n";
 
+        std::cout << "Press Enter to exit...\n";
+        std::cin.ignore();
+
+        spider.stop_spider();
+        std::cout << "Spider stoped... Wait...\n";
+         
+        server.stop_server();
+        std::cout << "Server stoped... Wait...\n";
+
+        spider_pr.join();
+        std::cout << "Spided closed\n";
+        search_pr.join();
+        std::cout << "All closed";
+
+
+        
        
+      
     
-        if (spider_pr.joinable())
+       /* if (spider_pr.joinable())
         {
+            
             spider_pr.join();
         }
-        if (search_pr.joinable())
+
+        if (server_pr.joinable())
         {
-            search_pr.join();
+            server_pr.join();
         }
+
+        */
+        
         
 
 
@@ -115,6 +161,7 @@ int main() {
         return 1;
     }
    
+    return 0;
 }
 
 

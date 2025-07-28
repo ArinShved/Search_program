@@ -37,6 +37,7 @@ public:
     ~Spider();
 
 	void run();
+    void stop_spider();
 
 private:
 

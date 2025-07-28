@@ -27,24 +27,31 @@ Spider::Spider(
 
 void Spider::run()
 {
-    std::unique_lock<std::mutex> lock(cond_mutex);
-    add_task(start_url, 0);
-
-    cond_v.wait(lock, [this] {
-        return processed_pages >= max_pages || (safe_queue.queue_empty() && thread_pool.is_done());
-     });
-
-
-   /* while (processed_pages < max_pages && !safe_queue.queue_empty())
+    try
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::unique_lock<std::mutex> lock(cond_mutex);
+        add_task(start_url, 0);
 
-    }*/
-    
-    
-    thread_pool.stop_with_wait();
+        cond_v.wait(lock, [this] {
+            return processed_pages >= max_pages || (safe_queue.queue_empty() && thread_pool.is_done());
+            });
 
-  //  std::cout << "Processed pages: " << processed_pages << "\n";
+
+        /* while (processed_pages < max_pages && !safe_queue.queue_empty())
+         {
+             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
+         }*/
+
+
+        thread_pool.stop_with_wait();
+
+        //  std::cout << "Processed pages: " << processed_pages << "\n";
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << e.what() << "\n";
+    }
 }
 
 
@@ -121,7 +128,7 @@ void Spider::process_next_data()
         }
 
         processed_pages++;
-      //  std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
+       // std::cout << "Processed: " << task.first << " (depth: " << task.second << ")\n";
 
         if (processed_pages >= max_pages || safe_queue.queue_empty())
         {
@@ -349,10 +356,20 @@ bool Spider::skip_link(const std::string& link)
     return visited_urls;
 }
 
+ void Spider::stop_spider()
+ {
+     processed_pages = max_pages + 1;
+ }
+
 
  Spider::~Spider()
  {
-    // std::cout << "Spider destruct" << "\n";
+    // std::cout << "\nSpider destruct" << "\n";
+    
      cond_v.notify_all();
      thread_pool.stop_with_wait();
+     
+   //  std::cout << "Done";
+     
+    
  }

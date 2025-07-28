@@ -49,14 +49,14 @@ void ThreadPool::submit(std::function<void()> func)
 
 void ThreadPool::stop_with_wait() 
 {
-    while (!tasks.queue_empty() && !done)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-    }
 
     done = true;
     tasks.set_done();
 
+   /* while (!tasks.queue_empty() && !done)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }*/
 
     for (auto& thread : threads)
     {

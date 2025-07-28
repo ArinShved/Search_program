@@ -3,6 +3,11 @@ set (CMAKE_CXX_STANDARD 20)
 
 set(PostgreSQL_ADDITIONAL_VERSIONS "16")
 
+if(WIN32)
+    add_definitions(-D_WIN32_WINNT=0x0A00)  
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_WIN32_WINNT=0x0A00")
+endif()
+
 set (BOOST_ROOT "C:/boost_1_88_0") 
 set(BOOST_LIBRARYDIR "${BOOST_ROOT}/libs")
 set(Boost_NO_SYSTEM_PATHS ON)
