@@ -5,6 +5,8 @@ using tcp = boost::asio::ip::tcp;
 SearchServer::SearchServer(DataBase& db, unsigned short port) : db(db), port(port), acceptor(ioc, boost::asio::ip::tcp::endpoint(boost::asio::ip::tcp::v4(), port))
 {
     acceptor.set_option(boost::asio::ip::tcp::acceptor::reuse_address(true));
+    boost::locale::generator gen;
+    std::locale::global(gen("ru_RU.UTF-8"));
     
 }
 
@@ -87,7 +89,6 @@ void SearchServer::stop_server()
     boost::system::error_code ec;
     acceptor.cancel(ec);
 
-   // std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     {
         std::lock_guard<std::mutex> lock(mutex);
@@ -138,7 +139,6 @@ void SearchServer::request(beast::tcp_stream& stream)
 {
     beast::flat_buffer buffer;
     http::request<http::string_body> req;
-   // stream.expires_after(std::chrono::seconds(30));
 
     try {
         boost::system::error_code ec;
@@ -308,6 +308,7 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
                     std::string word;
                     while (iss >> word)
                     {
+                        word = boost::locale::to_lower(word);
                         query_words.push_back(word);
                     }
                     break;
@@ -465,7 +466,7 @@ void SearchServer::post(http::request<http::string_body>& req, beast::tcp_stream
             html << R"(
                 <div class="result">
                     <div class="title">)" << result.title << R"(</div>
-                    <div class="url">)" << result.url << R"(</div>
+                    <div class="url"><a href=")" << result.url << R"(" target="_blank">)" << result.url << R"(</a></div>
                     <div class="relevance">Relevance: )" << result.relevance << R"(</div>
                 </div>
             )";

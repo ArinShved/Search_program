@@ -1,6 +1,6 @@
 #pragma once
 
-
+#include <boost/locale.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -38,7 +38,6 @@ private:
     net::io_context ioc{ 1 };
     boost::asio::ip::tcp::acceptor acceptor;  
     std::string err_mes;
-   // bool stop = false;
     std::atomic<bool> stop{ false };
     std::vector<std::shared_ptr<beast::tcp_stream>> conn;
    

@@ -77,11 +77,10 @@ int main() {
         std::cout << "Please, wait...\n";
 
         INIParser ini_parser("spider.ini");
-        DataBase db(ini_parser.db_conn_str());
         DataBase db_search(ini_parser.db_conn_str());
 
         Spider spider(
-            ini_parser.get_spider_data().start_url,
+            "https://ru.wikipedia.org/?l", //ini_parser.get_spider_data().start_url,
             ini_parser.get_spider_data().max_depth,
             ini_parser.get_spider_data().max_threads,
             1000,

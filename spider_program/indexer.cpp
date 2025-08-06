@@ -111,7 +111,7 @@ std::string Indexer::clean_page(const std::string& html_page)
             }
             else 
             {
-                text += tolower(c);
+                text += towlower(c);
                 space = false;
             }
         }
