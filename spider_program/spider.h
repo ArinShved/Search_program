@@ -32,12 +32,14 @@ public:
         DataBase& db,
         bool domain_filter);
 
-   // Spider(DataBase& db, INIParser& ini_pars, bool _domain_filter);
+  
 
     ~Spider();
 
 	void run();
     void stop_spider();
+    bool is_redirect(boost::beast::http::status status);
+    std::string redirect_page(const boost::beast::http::response<boost::beast::http::string_body>& res, const std::string& cur_url);
 
 private:
 
@@ -46,43 +48,25 @@ private:
     void add_task(const std::string& url, int depth);
 
     std::string download_page(const std::string& url);
-    //void save_to_db(const std::string& url, const Indexer& result);
-
     std::vector<std::string> extract_links(const std::string& html, const std::string& base_url);
 
     std::unordered_set<std::string>& get_visited_urls();
-
-
-
 
     SafeQueue<std::pair<std::string, int>> safe_queue;
     DataBase& db;
     Indexer indexer;
     ThreadPool thread_pool;
     std::unordered_set<std::string> visited_urls;
-
-   // INIParser& ini_pars;
-
     std::string start_url;
     int max_depth;
-
-    
     size_t max_pages;
     std::string db_conn;
-
     bool domain_filter;
     size_t max_threads;
-
-  
     std::mutex queue_mutex;
-
     std::mutex visited_mutex;
     std::atomic<int> processed_pages{ 0 };
-
     std::mutex db_mutex;
-   
     std::condition_variable cond_v;
     std::mutex cond_mutex;
-
-
 };

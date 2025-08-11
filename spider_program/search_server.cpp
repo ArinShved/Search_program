@@ -119,7 +119,6 @@ std::vector<SearchResult> SearchServer::search_result(const std::vector<std::str
     {
         return {};
     }
-    //std::lock_guard<std::mutex> lock(mutex);
 
     try
     {

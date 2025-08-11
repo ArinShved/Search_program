@@ -36,14 +36,6 @@ void Spider::run()
             return processed_pages >= max_pages || (safe_queue.queue_empty() && thread_pool.is_done());
             });
 
-
-        /* while (processed_pages < max_pages && !safe_queue.queue_empty())
-         {
-             std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-
-         }*/
-
-
         thread_pool.stop_with_wait();
 
         //  std::cout << "Processed pages: " << processed_pages << "\n";
@@ -84,8 +76,7 @@ void Spider::process_next_data()
         return;
     }
 
-   
-    std::lock_guard<std::mutex> lock(db_mutex);//нет ошибки, но значительно сократилась скорость
+    std::lock_guard<std::mutex> lock(db_mutex);
 
     try 
     {
@@ -105,8 +96,6 @@ void Spider::process_next_data()
 
         std::string title = indexer.get_title(html);
         title = indexer.clean_for_db(title);
-       // std::cout << title << "\n";
-
         
         try 
         {
@@ -123,7 +112,6 @@ void Spider::process_next_data()
         auto links = extract_links(html, task.first);
         for (const auto& link : links) 
         {
-           // std::cout << link << "\n";
             add_task(link, task.second + 1);
         }
 
@@ -137,7 +125,7 @@ void Spider::process_next_data()
     }
     catch (const std::exception& e) 
     {
-        std::cerr << "Error processing " << task.first << ": " << e.what() << "\n";
+        std::cerr << "\nError processing " << task.first << ": " << e.what() << "\n";
     }
     
 }
@@ -147,123 +135,142 @@ std::string Spider::download_page(const std::string& url)
 {
 
     net::io_context io_context;
+    std::string cur_url = url;
 
-    if (url.empty()) 
+
+    for (int redir = 0; redir < 5; redir++)
     {
-        throw std::runtime_error("URL is empty");
-    }
-
-    int protocol_end = url.find("://");
-    if (protocol_end == std::string::npos) 
-    {
-        throw std::runtime_error("Invalid URL");
-    }
-
-    const std::string protocol = url.substr(0, protocol_end);
-    const std::string host_and_path = url.substr(protocol_end + 3);
-    const size_t path_start = host_and_path.find('/');
-
-   
-    const std::string host = (path_start == std::string::npos)
-        ? host_and_path
-        : host_and_path.substr(0, path_start);
-
-
-    const std::string path = (path_start == std::string::npos)
-        ? "/"
-        : host_and_path.substr(path_start);
-
-
-    const std::string port = (protocol == "https") ? "443" : "80";
-
-
-    
-
-    try 
-    {
-        if (protocol == "https") 
+        if (url.empty())
         {
-            net::ssl::context ssl_context(net::ssl::context::tlsv12_client);
-            ssl_context.set_default_verify_paths();
-
-            beast::ssl_stream<beast::tcp_stream> stream(io_context, ssl_context);
-
-            beast::get_lowest_layer(stream).expires_after(std::chrono::seconds(30));
-
-            if (!SSL_set_tlsext_host_name(stream.native_handle(), host.c_str())) 
-            {
-                throw std::runtime_error("Failed to set SSL host name");
-            }
-
-            tcp::resolver resolver(io_context);
-            auto const results = resolver.resolve(host, port);
-
-            beast::get_lowest_layer(stream).connect(results);
-
-            stream.handshake(net::ssl::stream_base::client);
-
-            http::request<http::string_body> request{
-                http::verb::get,
-                path,
-                11  
-            };
-            request.set(http::field::host, host);
-            request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-
-            http::write(stream, request);
-
-            beast::flat_buffer buffer;
-            http::response<http::string_body> response;
-            http::read(stream, buffer, response);
-
-            beast::error_code ec;
-            stream.shutdown(ec);
-
-            if (ec && ec != net::ssl::error::stream_truncated) 
-            {
-                throw beast::system_error{ ec };
-            }
-
-            return response.body();
+            throw std::runtime_error("URL is empty");
         }
-        else 
+
+       // std::cout << cur_url << "\n\n";
+
+        int protocol_end = cur_url.find("://");
+        if (protocol_end == std::string::npos)
         {
-            beast::tcp_stream stream(io_context);
-            stream.expires_after(std::chrono::seconds(30));
-
-            tcp::resolver resolver(io_context);
-            auto const results = resolver.resolve(host, port);
-
-            stream.connect(results);
-
-            http::request<http::string_body> request{
-                http::verb::get,
-                path,
-                11
-            };
-            request.set(http::field::host, host);
-            request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
-
-            http::write(stream, request);
-
-            beast::flat_buffer buf;
-            http::response<http::string_body> response;
-            http::read(stream, buf, response);
-
-            beast::error_code ec;
-            stream.socket().shutdown(tcp::socket::shutdown_both, ec);
-
-            if (ec && ec != beast::errc::not_connected) 
-            {
-                throw beast::system_error{ ec };
-            }
-
-            return response.body();
+            throw std::runtime_error("Invalid URL");
         }
-    }
-    catch (const std::exception& e) 
-    {
-        throw std::runtime_error("Failed to download page from " + url + ": " + e.what());
+
+        const std::string protocol = cur_url.substr(0, protocol_end);
+        const std::string host_and_path = cur_url.substr(protocol_end + 3);
+        const size_t path_start = host_and_path.find('/');
+
+
+        const std::string host = (path_start == std::string::npos)
+            ? host_and_path
+            : host_and_path.substr(0, path_start);
+
+
+        const std::string path = (path_start == std::string::npos)
+            ? "/"
+            : host_and_path.substr(path_start);
+
+
+        const std::string port = (protocol == "https") ? "443" : "80";
+
+        try
+        {
+            if (protocol == "https")
+            {
+                net::ssl::context ssl_context(net::ssl::context::tlsv12_client);
+                ssl_context.set_default_verify_paths();
+
+                beast::ssl_stream<beast::tcp_stream> stream(io_context, ssl_context);
+
+                beast::get_lowest_layer(stream).expires_after(std::chrono::seconds(30));
+
+                if (!SSL_set_tlsext_host_name(stream.native_handle(), host.c_str()))
+                {
+                    throw std::runtime_error("Failed to set SSL host name");
+                }
+
+                tcp::resolver resolver(io_context);
+                auto const results = resolver.resolve(host, port);
+
+                beast::get_lowest_layer(stream).connect(results);
+
+                stream.handshake(net::ssl::stream_base::client);
+
+                http::request<http::string_body> request{
+                    http::verb::get,
+                    path,
+                    11
+                };
+                request.set(http::field::host, host);
+                request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+                http::write(stream, request);
+
+                beast::flat_buffer buffer;
+                http::response<http::string_body> response;
+                http::read(stream, buffer, response);
+
+
+                beast::error_code ec;
+                stream.shutdown(ec);
+
+                if (ec && ec != net::ssl::error::stream_truncated)
+                {
+                    throw beast::system_error{ ec };
+                }
+                
+                std::string new_url = redirect_page(response, cur_url);
+                if (!new_url.empty()) 
+                {
+                    cur_url = new_url;
+                    continue;
+                }
+
+                return response.body();
+            }
+            else
+            {
+                beast::tcp_stream stream(io_context);
+                stream.expires_after(std::chrono::seconds(30));
+
+                tcp::resolver resolver(io_context);
+                auto const results = resolver.resolve(host, port);
+
+                stream.connect(results);
+
+                http::request<http::string_body> request{
+                    http::verb::get,
+                    path,
+                    11
+                };
+                request.set(http::field::host, host);
+                request.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+
+                http::write(stream, request);
+
+                beast::flat_buffer buf;
+                http::response<http::string_body> response;
+                http::read(stream, buf, response);
+
+                beast::error_code ec;
+                stream.socket().shutdown(tcp::socket::shutdown_both, ec);
+
+                if (ec && ec != beast::errc::not_connected)
+                {
+                    throw beast::system_error{ ec };
+                }
+
+                std::string new_url = redirect_page(response, cur_url);
+                if (!new_url.empty())
+                {
+                    cur_url = new_url;
+                    continue;
+                }
+
+                return response.body();
+            }
+        }
+        catch (const std::exception& e)
+        {
+            throw std::runtime_error("Failed to download page from " + url + ": " + e.what());
+        }
     }
 }
 
@@ -280,7 +287,6 @@ std::vector<std::string> Spider::extract_links(const std::string& html, const st
     {
         std::smatch match = *i;
         std::string link = match[1].str();
-
       
         link.erase(link.find_last_not_of(" \t\n\r\f\v") + 1);
         link.erase(0, link.find_first_not_of(" \t\n\r\f\v"));
@@ -310,8 +316,6 @@ std::vector<std::string> Spider::extract_links(const std::string& html, const st
             link = link.substr(0, question_mark);
         }
 
-        
-
         if (domain_filter && link.find(start_url) == std::string::npos) 
         {
             continue;
@@ -322,8 +326,6 @@ std::vector<std::string> Spider::extract_links(const std::string& html, const st
         {
             links.push_back(link);
         }
-
-       
     }
 
     return links;
@@ -369,7 +371,65 @@ bool Spider::skip_link(const std::string& link)
      cond_v.notify_all();
      thread_pool.stop_with_wait();
      
-   //  std::cout << "Done";
-     
-    
+   //  std::cout << "Done";    
+ }
+
+ 
+ std::string Spider::redirect_page(const http::response<http::string_body>& res, const std::string& cur_url)
+ {
+     if (is_redirect(res.result()))
+     {
+         auto loc = res.find(http::field::location);
+         if (loc != res.end())
+         {
+             std::string new_url(loc->value().data(), loc->value().size());
+             new_url.erase(0, new_url.find_first_not_of(" \t\n\r\f\v"));
+             new_url.erase(new_url.find_last_not_of(" \t\n\r\f\v") + 1);
+
+             if (new_url.empty()) 
+             {
+                 return "";
+             }
+
+             if (new_url.find("://") == std::string::npos)
+             {
+                 size_t end = cur_url.find("://");
+                 if (end == std::string::npos) 
+                 {
+                     return "";
+                 }
+
+                 std::string prot = cur_url.substr(0, end);
+                 std::string host = cur_url.substr(end + 3);
+                 host = host.substr(0, host.find('/'));
+
+                 if (new_url[0] == '/') 
+                 {
+                     new_url = prot + "://" + host + new_url;
+                 }
+                 else 
+                 {
+                     std::string base_path = cur_url.substr(0, cur_url.find_last_of('/') + 1);
+                     new_url = base_path + new_url;
+                 }
+             }
+
+             return new_url;
+         }
+     }
+     return "";
+ }
+
+ bool Spider::is_redirect(http::status status)
+ {
+     static const std::set<http::status> redir = 
+     {
+         http::status::moved_permanently,
+         http::status::found,
+         http::status::see_other,
+         http::status::temporary_redirect,
+         http::status::permanent_redirect
+     };
+
+     return redir.count(status) > 0;
  }

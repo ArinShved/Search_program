@@ -9,8 +9,6 @@
 #include "spider.h"
 #include "search_server.h"
 
-//#pragma comment(lib,"shell32")
-
 
 
 void open_browser(const std::string& url) {
@@ -23,8 +21,6 @@ void open_browser(const std::string& url) {
 #endif
 
     std::system(command.c_str());
-
-  //  ShellExecuteA(NULL, "open", url.c_str(), NULL, NULL, SW_SHOWNORMAL);
 }
 
 
@@ -80,7 +76,8 @@ int main() {
         DataBase db_search(ini_parser.db_conn_str());
 
         Spider spider(
-            "https://ru.wikipedia.org/?l", //ini_parser.get_spider_data().start_url,
+            "https://wiki.openssl.org",
+           // "https://ru.wikipedia.org/?l", //ini_parser.get_spider_data().start_url,
             ini_parser.get_spider_data().max_depth,
             ini_parser.get_spider_data().max_threads,
             1000,
@@ -99,19 +96,19 @@ int main() {
         std::string url = "http://localhost:" + std::to_string(ini_parser.get_port());
         open_browser(url);
 
-        std::cout << "\n\nIf Browser doesn't open, please open the link: " + url + "\n\n";
+        std::cout << "\n\nIf Browser doesn't open, please open the link: " + url + "\n\n"; 
 
         std::cout << "Press Enter to exit...\n";
         std::cin.ignore();
 
         spider.stop_spider();
-        std::cout << "Spider stoped... Wait...\n";
+        std::cout << "\nSpider stoped... Wait...\n";
          
         server.stop_server();
-        std::cout << "Server stoped... Wait...\n";
+        std::cout << "\nServer stoped... Wait...\n";
 
         spider_pr.join();
-        std::cout << "Spided closed\n";
+        std::cout << "\nSpided closed\n";
         search_pr.join();
         std::cout << "All closed";
 
